@@ -32,8 +32,28 @@ describe('Polygon', function() {
 		});
 
 		it('should not equal another polygon with different vertices', function() {
+			// Construct a polygon from the points, leaving out the second vertex
 			let other = new Polygon(...polygon.filter((v, i) => i !== 1));
 			expect(polygon.equals(other)).to.be.false;
 		});
+	});
+
+	describe('.isConvex', function() {
+		let polygon;
+		beforeEach(function() {
+			polygon = new Polygon(
+				new Vector(1, 1, 1),
+				new Vector(5, 5, 1),
+				new Vector(4, 8, 1),
+				new Vector(0, 6, 1),
+				new Vector(-1, 3, 1)
+			);
+		});
+
+		it('should return true for convex polygons, false for concave ones', function() {
+			expect(polygon.isConvex()).to.be.true;
+			polygon[4].x = 2;
+			expect(polygon.isConvex()).to.be.false;
+		})
 	});
 });
