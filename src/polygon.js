@@ -3,8 +3,9 @@ import Constants from './constants.js';
 
 export default class Polygon extends Array {
 	constructor() {
-		super();
-		Object.assign(this, arguments);
+		let vertices = (arguments.length === 1 && Array.isArray(arguments[0])) ? arguments[0] : arguments;
+		super(vertices.length);
+		Object.assign(this, vertices);
 	}
 
 	equals(other) {
@@ -25,16 +26,16 @@ export default class Polygon extends Array {
 	 */
 	isPlanar() {
 		// A point/line segment/triangle is always planar
-		if (vertices.length <= 3) return true;
+		if (this.length <= 3) return true;
 
 		// If we have more than three vertices, calculate the normal of the plane defined by them
-		let N = Vector.cross(vertices[1].subtract(vertices[0]), vertices[2].subtract(vertices[0]));
+		let N = Vector.cross(this[1].subtract(this[0]), this[2].subtract(this[0]));
 		// Calculate the plane's distance from the origin
-		let d = -Vector.dot(N, vertices[0]);
+		let d = Vector.dot(N, this[0]);
 
 		// Check that all remaining vertices also lie on the plane
-		for (let i = 3; i < vertices.length; i++) {
-			if (Vector.dot(N, vertices[i]) + d > Constants.EPSILON) return false;
+		for (let i = 3; i < this.length; i++) {
+			if (Math.abs(Vector.dot(N, this[i]) - d) > Constants.EPSILON) return false;
 		}
 
 		return true;
