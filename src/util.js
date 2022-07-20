@@ -38,14 +38,14 @@ export function lineIntersect(a1, b1, a2, b2) {
 		return p1;
 	else
 		return null;
-
 }
 
 /**
  * Clips the polygon `subject` with the polygon `clip`, i.e. intersects them. Both polygons need to 
- * 1. be co-planar (this also implies that both need to be planar), 
- * 2. be convex,
- * 3. contain at least three points. 
+ * 
+ * 	1. be co-planar (this also implies that both need to be planar), 
+ *  2. be convex,
+ *  3. contain at least three points. 
  * 
  * Note that for performance reasons, the first two preconditions are not checked by this function. 
  * If they are violated, you will just get wrong results. 
@@ -76,8 +76,8 @@ export function clipPolygon(subject, clip) {
 			let curr = input[j];
 			let next = input[(j + 1) % input.length];
 
-			// Construct the clip plane. This is the plane spanned by the clip line and
-			// the subject polygon's normal vector.
+			// Construct the clip plane from the clip line. 
+			// This is the plane spanned by the clip line and the subject polygon's normal vector.
 			let N = Vector.cross(normal, b.subtract(a));
 			let d = Vector.dot(N, a);
 
@@ -108,7 +108,6 @@ export function clipPolygon(subject, clip) {
 			// Do nothing
 		}
 	}
-
 
 	return output;
 }
