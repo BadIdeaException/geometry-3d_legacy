@@ -17,10 +17,8 @@ function calculateNormal(triangle) {
 	return Vector.cross(u,v);	
 }
 
-export default class Triangle extends Array {
+export default class Triangle extends Polygon {
 	constructor(a,b,c) {
-		super(3);
-
 		if (!b && !c && Array.isArray(a)) {
 			b = a[1];
 			c = a[2];
@@ -34,9 +32,7 @@ export default class Triangle extends Array {
 			c = temp;
 		}		
 		
-		this[0] = a;
-		this[1] = b;
-		this[2] = c;
+		super(a, b, c);
 
 		this.normal = calculateNormal(this);
 	}
