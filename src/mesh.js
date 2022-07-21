@@ -1,6 +1,6 @@
 import Vector from './vector.js';
 
-class Mesh {
+export default class Mesh {
 	constructor(faces) {
 		this.faces = faces;
 	}
