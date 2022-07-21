@@ -1,9 +1,8 @@
-const Vector = require('./vector.js');
+import Vector from './vector.js';
 
 class Mesh {
 	constructor(faces) {
 		this.faces = faces;
-		this.vertices = this.faces.flatMap(face => [ face.a, face.b, face.c ]);
 	}
 
 	/**
@@ -34,8 +33,8 @@ class Mesh {
 		let [ above, below ] = this.cut(dimension, offset);
 		let target = above.isEmpty() ? below : above;
 		
-		target = target.faces.filter(face => face.a[dimension] === offset || face.b[dimension] === offset || face.c[dimension] === offset);
-		return target.map(face => [ face.a, face.b, face.c ].filter(vertex => vertex[dimension] === offset));
+		target = target.faces.filter(face => face.some(vertex => vertex[dimension] === offset);
+		return target.map(face => face.filter(vertex => vertex[dimension] === offset));
 	}
 
 	rayIntersect(ray) {
@@ -85,8 +84,8 @@ class Mesh {
 			// face selected in the last step.
 			selected = remaining.filter(
 				remainingFace => selected.some(selectedFace => 
-					[ remainingFace.a, remainingFace.b, remainingFace.c ].some(vr => 
-					[ selectedFace.a, selectedFace.b, selectedFace.c ].some(vs => vr.equals(vs)))
+					remainingFace.some(vr => 
+					selectedFace.some(vs => vr.equals(vs)))
 				)
 			);
 		}
@@ -134,6 +133,10 @@ class Mesh {
 			return 'transverse';
 		else
 			return 'unknown';	
+	}
+
+	get vertices() {
+		return [].concat(...this.faces);
 	}
 
 	getBoundingBox() {
