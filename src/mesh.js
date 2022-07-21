@@ -33,7 +33,7 @@ class Mesh {
 		let [ above, below ] = this.cut(dimension, offset);
 		let target = above.isEmpty() ? below : above;
 		
-		target = target.faces.filter(face => face.some(vertex => vertex[dimension] === offset);
+		target = target.faces.filter(face => face.some(vertex => vertex[dimension] === offset));
 		return target.map(face => face.filter(vertex => vertex[dimension] === offset));
 	}
 
