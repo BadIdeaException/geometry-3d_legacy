@@ -2,6 +2,8 @@ import Vector from './vector.js';
 import Matrix from './matrix.js';
 import Constants from './constants.js';
 
+export function sign(x) { return Math.abs(x) < Constants.EPSILON ? 0 : Math.sign(x) };
+
 export function lineIntersect(a1, b1, a2, b2) {
 	/*
 		This function implements the algorithm by Ron Goldman, Univerity of Waterloo, 
@@ -45,9 +47,10 @@ export function lineIntersect(a1, b1, a2, b2) {
  * 
  * 	1. be co-planar (this also implies that both need to be planar), 
  *  2. be convex,
- *  3. contain at least three points. 
+ *  3. be wound counter-clockwise,
+ *  4. contain at least three points. 
  * 
- * Note that for performance reasons, the first two preconditions are not checked by this function. 
+ * Note that for performance reasons, the first three preconditions are not checked by this function. 
  * If they are violated, you will just get wrong results. 
  * 
  * @param  {Vector[]} subject The polygon to clip.
@@ -81,31 +84,44 @@ export function clipPolygon(subject, clip) {
 			let N = Vector.cross(normal, b.subtract(a));
 			let d = Vector.dot(N, a);
 
-			// Determine whether curr and next are inside the polygon with respect to the 
-			// clip line.
-			// They are inside if they lie on the positive side of the clip plane, or on
-			// the plane itself.
-			const currInside = Vector.dot(N, curr) - d > -Constants.EPSILON;
-			const nextInside = Vector.dot(N, next) - d > -Constants.EPSILON;
+			// Calculate the sign of the signed distances of curr and next to the clip plane.
+			// They will be kept if they are on the positive side of the clip plane,
+			// or on the plane itself.
+			const currSide = sign(Vector.dot(N, curr) - d);
+			const nextSide = sign(Vector.dot(N, next) - d);
 
-			// Case 1: Both curr and next are inside the clip line.
+			// Case 1: Both curr and next are on the "keep" side of the clip plane, 
+			// or on the plane itself.
 			// Add next to the output list
-			if (currInside && nextInside)
+			if (currSide >= 0 && nextSide >= 0)
 				output.push(next);
-			// Case 2: curr is inside the clip line, but next is outside. 
-			// Add the intersection of AB with the edge from curr to next to the output
-			else if (currInside && !nextInside) {
+			// Case 2a: curr is on the "keep" side of the clip plane, but next is on 
+			// the "discard" side. 
+			// Add the intersection of AB with the edge from curr to next to the output.
+			// (Note that curr was already added in the previous step.)
+			else if (currSide > 0 && nextSide < 0) {
 				let isect = lineIntersect(a, b, curr, next);
 				output.push(isect);
-			// Case 3: curr is outside the cut line, but next is inside.
+			// Case 2b: curr is on the clip plane, but next is on the "discard" side.
+			// Then the intersection of AB with the edge from curr to next is curr.
+			// Do nothing, because curr was already added in the previous step.
+			} else if (currSide === 0 && nextSide < 0) {
+				
+			// Case 3a: curr is on the "discard" side of the clip plane, but next is on the
+			// "keep" side.
 			// Add the intersection of AB and the edge from curr to next as well as next
-			} else if (!currInside && nextInside) {
+			} else if (currSide < 0 && nextSide > 0) {
 				let isect = lineIntersect(a, b, curr, next);
 				output.push(isect);
+				output.push(next);
+			// Case 3b: curr is on the "discard" side of the clip plane, but next is on it.
+			// Then the intersection of AB and the edge from curr to next is next.
+			// Add next to the output.
+			} else if (currSide < 0 && nextSide === 0) {
 				output.push(next);
 			}
-			// Case 4: Neither curr nor prev are inside the clip line. 
-			// Do nothing
+			// Case 4: Both curr and prev are on the "discard" side of the clip plane. 
+			// Add neither, i.e. do nothing.
 		}
 	}
 

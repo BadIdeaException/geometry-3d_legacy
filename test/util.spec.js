@@ -47,7 +47,7 @@ describe('clipPolygon', function() {
 			new Vector(3, 1, 1),
 			new Vector(2, 5, 1),
 			new Vector(-3, 5, 1),
-			new Vector(0, 1, 1)
+			new Vector(-2, 2, 1)
 		];
 	});
 
@@ -58,6 +58,26 @@ describe('clipPolygon', function() {
 	it('should return an empty polygon if there is no intersection', function() {
 		let clip = subject.map(v => new Vector(v.x + 10, v.y, v.z));		
 		expect(clipPolygon(subject, clip)).to.be.empty;
+	});
+
+	it('should return a polygon consisting of only a point for two co-planar polygons touching in only one point', function() {
+		const clip = [
+			subject[2],
+			new Vector(5, 5, 1),
+			new Vector(8, 7, 1),
+		];debugger
+		expect(clipPolygon(subject, clip)).to.be.an('array').with.deep.members([ clip[0] ]);
+		expect(clipPolygon(clip, subject)).to.be.an('array').with.deep.members([ clip[0] ]);
+	});
+
+	it('should return a polygon consisting of only two points for two co-planar polygons sharing only an edge', function() {
+		const clip = [
+			subject[1],
+			new Vector(5, 5, 1),
+			subject[2]
+		];
+		expect(clipPolygon(subject, clip)).to.be.an('array').with.deep.members([ clip[0], clip[2] ]);
+		expect(clipPolygon(clip, subject)).to.be.an('array').with.deep.members([ clip[0], clip[2] ]);
 	});
 
 	it('should return the intersection of two co-planar overlapping polygons', function() {
