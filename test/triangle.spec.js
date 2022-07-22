@@ -52,6 +52,82 @@ describe('Triangle', function() {
 		});
 	});
 
+	describe('.cut', function() {
+		let tri;
+		beforeEach(function() {
+			tri = new Triangle(
+				new Vector(1,0,0),
+				new Vector(5,5,5),
+				new Vector(-2,4,4)
+			);
+		});
+
+		it('should not cut the triangle if it does not intersect the cut plane', function() {
+			['x', 'y', 'z'].forEach(function(dim) {
+				expect(tri.cut(dim, -10)).to.be.an('object').with.property('above').that.deep.equals(tri);
+				expect(tri.cut(dim, +10)).to.be.an('object').with.property('below').that.deep.equals(tri);
+			});
+		});
+
+		it('should cut the triangle into two triangles if one of its vertices is on the cut plane and the other two are on opposite sides', function() {
+			const offset = 1;
+			let cut = tri.cut('x', offset);
+			expect(cut).to.be.an('object').with.all.keys('above', 'below');
+			expect(cut.above).to.be.an.instanceof(Triangle);
+			expect(cut.below).to.be.an.instanceof(Triangle);
+			// Above should contain the vertex that is on the cut plane
+			expect(cut.above).to.contain(tri[0]);
+			// Above should contain the vertex that is on the positive side of the cut plane
+			expect(cut.above).to.contain(tri[1]);
+			// The remaining vertex should be on the cut plane as well
+			expect(cut.above).to.satisfy(tri => tri.some(vertex => 
+				vertex !== tri[0] 
+				&& vertex !== tri[1] 
+				&& vertex.x === offset));
+			// Below should contain the vertex that is on the cut plane
+			expect(cut.below).to.contain(tri[0]);
+			// Below should contain the vertex that is on the negative side of the cut plane
+			expect(cut.below).to.contain(tri[2]);
+			// The remaining vertex should be on the cut plane as well
+			expect(cut.below).to.satisfy(tri => tri.some(vertex => 
+				vertex !== tri[0]
+				&& vertex !== tri[2]
+				&& vertex.x === offset));
+		});
+
+		it('should cut the triangle into above and below parts if it intersects the cut plane', function() {			
+			const offset = 2;
+			['x', 'y', 'z'].forEach(function(dim) {
+				let cut = tri.cut(dim, offset);
+				// How many of tri's vertices should be in above?
+				// If this is 1, above should be a triangle
+				// If it is 2, above should be a polygon that is not a triangle
+				let len = tri.map(v => v[dim]).filter(coord => coord > offset).length;
+
+				expect(cut).to.be.an('object').with.all.keys('above', 'below');
+				if (len === 2)
+					expect(cut.above).to.be.an.instanceof(Polygon).and.not.an.instanceof(Triangle);
+				else
+					expect(cut.above).to.be.an.instanceof(Triangle);
+				// Above should include all of tri's vertices that have a dim coordinate greater than the cut plane offset
+				expect(cut.above).to.include.all.members(tri.filter(v => v[dim] > offset));
+				// All points that are not vertices of tri should be on the cut plane
+				expect(cut.above).to.satisfy(polygon => polygon
+							.filter(v => !tri.includes(v))
+							.every(v => v[dim] === offset));
+
+				if (len === 1)
+					expect(cut.below).to.be.an.instanceof(Polygon).and.not.an.instanceof(Triangle);
+				else
+					expect(cut.below).to.be.an.instanceof(Triangle);
+				expect(cut.below).to.include.all.members(tri.filter(v => v[dim] < offset));
+				expect(cut.below).to.satisfy(polygon => polygon
+							.filter(v => !tri.includes(v))
+							.every(v => v[dim] === offset));							
+			});
+		});
+	});
+
 	describe('.intersect', function() {
 		let tri1;
 		beforeEach(function() {
@@ -65,12 +141,15 @@ describe('Triangle', function() {
 		it('should return null if the triangles do not intersect', function() {
 			let tri2;
 
+			// tri2 is 'above' tri1
 			tri2 = new Triangle(...tri1.map(v => v.add(tri1.normal)));
 			expect(tri1.intersect(tri2), 'shifted along normal').to.be.null;
 
+			// tri2 is co-planar to tri1, but does not intersect it
 			tri2 = new Triangle(...tri1.map(v => v.add(tri1[1].subtract(tri1[0]).scale(2))));
 			expect(tri1.intersect(tri2), 'shifted on plane').to.be.null;
 
+			// tri2 is skew to tri1 and does not intersect it
 			tri2 = new Triangle(
 				new Vector(10,10,10),
 				new Vector(15,15,20),
@@ -88,17 +167,17 @@ describe('Triangle', function() {
 
 		it('should return the point if the triangles touch in one point only, and this point should be one of the six corners', function() {
 			// Vertex set of tri1, shifted along it's normal
-			let V = tri1.map(v => v.add(tri1.normal));
+			let vertices = tri1.map(v => v.add(tri1.normal));
 
-			// Now set V[0] to each one of tri1's vertices in turn
-			// The triangles should now intersect in V[0]
+			// Now set vertices[0] to each one of tri1's vertices in turn
+			// The triangles should now intersect in vertices[0]
 			for (let i = 0; i < 3; i++) {
-				V[0] = tri1[i];
-				let tri2 = new Triangle(...V);
+				vertices[0] = tri1[i];
+				let tri2 = new Triangle(...vertices);
 				let isect = tri1.intersect(tri2);
 				expect(isect).to.be.ok;
 				expect(isect).to.be.an.instanceof(Vector);
-				expect(isect.equals(V[0])).to.be.true;
+				expect(isect.equals(vertices[0])).to.be.true;
 			}
 		});
 
