@@ -1,44 +1,57 @@
 import Vector from './vector.js';
+import Triangle from './triangle.js';
+import Polygon from './polygon.js';
 
-export default class Mesh {
+export default class Mesh extends Array {
 	constructor(faces) {
-		this.faces = faces;
+		if (Array.isArray(faces) && !(faces instanceof Triangle) && !(faces instanceof Polygon)) {
+			super(faces.length);
+			Object.assign(this, faces);
+		} else {
+			super(arguments.length);
+			Object.assign(this, arguments);
+		}
 	}
+	/*
+		Applying Array operations to a mesh will yield an array, not a mesh
+	 */
+	static get [Symbol.species]() { return Array };
 
 	/**
 	 * Cuts this mesh along the plane perpendicular to `dimension` at `offset`.
 	 * @param  {String} dimension One of `'x'`, `'y'` or `'z'`.
 	 * @param  {Number} offset    The offset at which to cut.
-	 * @return {Mesh[]}		An array of meshes of two meshes that combined equal this mesh, but do
+	 * @return {Object}		An object of two meshes (`above` and `below`) that combined equal this mesh, but do
 	 * not intersect with the cut plane (other than touching). Note that the meshes are not guaranteed
-	 * to be contiguous even if the original mesh was. The first mesh is always that comprised of all
-	 * faces on the greater-or-equal side of the cutplane, the second that with the less-or-equal ones.
+	 * to be contiguous even if the original mesh was. The `above` mesh is comprised of all
+	 * faces on the greater-or-equal side of the cutplane, the `below` mesh that with the less-than-or-equal ones.
+	 * Note that `above` or `below` may be empty.
 	 */
 	cut(dimension, offset) {
 		let above = [];
 		let below = [];
-		let cutResults = this.faces.map(face => face.cut(dimension, offset));
+		let cutResults = this.map(face => face.cut(dimension, offset));
 			
 		for (let cutResult of cutResults) {
-			above = above.concat(cutResult.slice(0, cutResult.crossIndex));
-			below = below.concat(cutResult.slice(cutResult.crossIndex));
+			above = above.concat(cutResult.above.isEmpty() ? [] : cutResult.above.tesselate());
+			below = below.concat(cutResult.below.isEmpty() ? [] : cutResult.below.tesselate());
 		}
-		return [
-			new Mesh(above),
-			new Mesh(below)
-		];
+		return {
+			above: new Mesh(above),
+			below: new Mesh(below)
+		};
 	}
 
 	crossSection(dimension, offset) {
 		let [ above, below ] = this.cut(dimension, offset);
 		let target = above.isEmpty() ? below : above;
 		
-		target = target.faces.filter(face => face.some(vertex => vertex[dimension] === offset));
+		target = target.filter(face => face.some(vertex => vertex[dimension] === offset));
 		return target.map(face => face.filter(vertex => vertex[dimension] === offset));
 	}
 
 	rayIntersect(ray) {
-		this.faces.some(face => face.rayIntersect(ray));
+		this.some(face => face.rayIntersect(ray));
 	}
 
 	/**
@@ -59,7 +72,7 @@ export default class Mesh {
 		 */
 		
 		// The faces of the original mesh that are not yet assigned to a submesh
-		let remaining = this.faces.slice(); // Shallow copy
+		let remaining = this.slice(); // Shallow copy
 		// The faces that were selected in the previous step
 		let selected = [];
 		// The resulting array of submeshes
@@ -105,12 +118,8 @@ export default class Mesh {
 	}
 
 	isEmpty() {
-		return this.faces.length === 0;
+		return this.length === 0;
 	}
-
-	// get vertices() {
-	// 	return this.faces.flat();
-	// }
 
 	/**
 	 * The orientation of the mesh. This describes in which dimension the mesh is primarily oriented.
@@ -122,7 +131,7 @@ export default class Mesh {
 	 * 45 degrees between two planes.
 	 */
 	get orientation() {
-		let aggregateNormal = this.faces
+		let aggregateNormal = this
 			.map(face => face.normal)
 			.reduce((prev, curr) => prev.add(curr), Vector.ZERO);
 		if (Math.abs(aggregateNormal.x) > Math.abs(aggregateNormal.y) && Math.abs(aggregateNormal.x) > Math.abs(aggregateNormal.z))
@@ -136,7 +145,7 @@ export default class Mesh {
 	}
 
 	get vertices() {
-		return [].concat(...this.faces);
+		return this.flat();
 	}
 
 	getBoundingBox() {
