@@ -105,12 +105,11 @@ export default class Triangle extends Polygon {
 			// Above and below are each triangles.
 			if (on) {
 				let a = (above[0][dimension] - offset) / (above[0][dimension] - below[0][dimension]);
-				let p = {
+				let p = new Vector({
 					[dimension]: offset,
 					[otherDimensions[0]]: above[0][otherDimensions[0]] + a * (below[0][otherDimensions[0]] - above[0][otherDimensions[0]]),
 					[otherDimensions[1]]: above[0][otherDimensions[1]] + a * (below[0][otherDimensions[1]] - above[0][otherDimensions[1]]),
-				}
-				p = new Vector(p.x, p.y, p.z);
+				});
 				result = {
 					above: new Triangle(above[0], on, p),
 					below: new Triangle(below[0], on, p)
@@ -132,20 +131,18 @@ export default class Triangle extends Polygon {
 					triangular = above;
 				}
 				let a0 = (trapezoid[0][dimension] - offset) / (trapezoid[0][dimension] - triangular[0][dimension]);
-				let p0 = {
+				let p0 = new Vector({
 					[dimension]: offset, 
 					[otherDimensions[0]]: trapezoid[0][otherDimensions[0]] + (triangular[0][otherDimensions[0]] - trapezoid[0][otherDimensions[0]]) * a0, 
 					[otherDimensions[1]]: trapezoid[0][otherDimensions[1]] + (triangular[0][otherDimensions[1]] - trapezoid[0][otherDimensions[1]]) * a0
-				};
-				p0 = new Vector(p0.x, p0.y, p0.z);
+				});
 
 				let a1 = (trapezoid[1][dimension] - offset) / (trapezoid[1][dimension] - triangular[0][dimension]);
-				let p1 = {
+				let p1 = new Vector({
 					[dimension]: offset,
 					[otherDimensions[0]]: trapezoid[1][otherDimensions[0]] + (triangular[0][otherDimensions[0]] - trapezoid[1][otherDimensions[0]]) * a1,
 					[otherDimensions[1]]: trapezoid[1][otherDimensions[1]] + (triangular[0][otherDimensions[1]] - trapezoid[1][otherDimensions[1]]) * a1
-				}
-				p1 = new Vector(p1.x, p1.y, p1.z);
+				});
 
 				if (above === triangular) { 
 					result = {

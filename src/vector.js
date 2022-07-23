@@ -8,6 +8,13 @@ export default class Vector {
 	z;
 
 	constructor(x,y,z) {
+		// If x is an object, read the coordinates from that object
+		if (typeof x === 'object') {
+			y = x.y;
+			z = x.z;
+			x = x.x;
+		}
+
 		this.x = x;
 		this.y = y;
 		this.z = z;
