@@ -450,9 +450,10 @@ export default class Triangle extends Polygon {
 	// Override some Polygon methods with simplified, faster versions specific to Triangle.
 	
 	/*
-		Triangles are always planar.
+		Triangles are always planar and convex.
 	 */
 	isPlanar() { return true; }
+	isConvex() { return true; }
 	/*
 		Triangles can be tesselated trivially.
 	 */
