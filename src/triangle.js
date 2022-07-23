@@ -284,8 +284,7 @@ export default class Triangle extends Polygon {
 		const dist1 = this.map(v => Vector.dot(N2, v) + d2);
 		// If all distances are unequal to 0, and all have the same sign, then this triangle lies completely on one 
 		// side of pi2 and there is no overlap.
-		if (Math.abs(dist1[0]) > Constants.EPSILON && Math.abs(dist1[1]) > Constants.EPSILON && Math.abs(dist1[2]) > Constants.EPSILON 
-			&& Math.sign(dist1[0]) === Math.sign(dist1[1]) && Math.sign(dist1[0]) === Math.sign(dist1[2])) {
+		if (dist1.every(d => Math.abs(d) > Constants.EPSILON) && Math.sign(dist1[0]) === Math.sign(dist1[1]) && Math.sign(dist1[0]) === Math.sign(dist1[2])) {
 			return null;
 		}
 
@@ -293,14 +292,12 @@ export default class Triangle extends Polygon {
 		const N1 = Vector.cross(this[1].subtract(this[0]), this[2].subtract(this[0]));
 		const d1 = -Vector.dot(N1, this[0]);
 		const dist2 = other.map(v => Vector.dot(N1, v) + d1);
-		if (Math.abs(dist2[0]) > Constants.EPSILON && Math.abs(dist2[1]) > Constants.EPSILON && Math.abs(dist2[2]) > Constants.EPSILON
-			&& Math.sign(dist2[0]) === Math.sign(dist2[1]) && Math.sign(dist2[0]) === Math.sign(dist2[2])) {
+		if (dist2.every(d => Math.abs(d) > Constants.EPSILON) && Math.sign(dist2[0]) === Math.sign(dist2[1]) && Math.sign(dist2[0]) === Math.sign(dist2[2])) {			
 			return null;
 		}
 
 		// If all dist{0,1}.{0,1,2} === 0 the two planes are co-planar.
-		if (dist1[0] < Constants.EPSILON && dist1[1] < Constants.EPSILON && dist1[2] < Constants.EPSILON
-			&& dist2[0] < Constants.EPSILON && dist2[1] < Constants.EPSILON && dist2[2] < Constants.EPSILON) {
+		if (dist1.every(d => Math.abs(d) < Constants.EPSILON) && dist2.every(d => Math.abs(d) < Constants.EPSILON)) {
 			// The original paper now projects the two triangles to an axis-aligned plane for optimization, and
 			// then conducts pair-wise edge intersections. 
 			// 
