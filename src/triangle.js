@@ -66,7 +66,11 @@ export default class Triangle extends Polygon {
 		const otherDimensions = ['x','y','z'].filter(dim => dim !== dimension);
 
 		let result;
-		if (this.every(v => v[dimension] >= offset)) {
+		if (this.every(v => Math.abs(v[dimension] - offset) < Constants.EPSILON)) {
+			// The triangle is co-planar with the cut plane. 
+			// Assign it to both above and below.
+			result = { above: this, below: this };
+		} else if (this.every(v => v[dimension] >= offset)) {
 			// The triangle is completely on the greater-or-equal side of the cut plane. 
 			// Assign it to above and an empty polygon to below.
 			result = { above: this, below: new Polygon() };
@@ -91,13 +95,6 @@ export default class Triangle extends Polygon {
 				else if (v[dimension] < offset)
 					below.push(v);
 			});
-			// if (triangular.length === 2) {
-			// 	let temp = triangular;
-			// 	triangular = trapezoid;
-			// 	trapezoid = temp;
-			// 	// Remember we switched trapezoid and triangular list. This is important for ordering the result
-			// 	switched = true; 
-			// }
 
 			// If one vertex is right on the cut plane, above and below will each contain one remaining vertex each.
 			// The edge between them crosses the cut plane. Calculate this edge's intersection point with the cut

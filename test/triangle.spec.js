@@ -69,6 +69,18 @@ describe('Triangle', function() {
 			});
 		});
 
+		it('should have the triangle in both above and below if it is co-planar with the cut plane', function() {
+			const dim = 'z';
+			const offset = 1;
+			let vertices = tri.map(v => new Vector({ ...v, [dim]: offset }));
+			tri = new Triangle(...vertices);
+
+			let cut = tri.cut(dim, offset);
+			expect(cut).to.be.an('object').with.all.keys('above', 'below');
+			expect(cut.above).to.deep.equal(tri);
+			expect(cut.below).to.deep.equal(tri);
+		});
+
 		it('should cut the triangle into two triangles if one of its vertices is on the cut plane and the other two are on opposite sides', function() {
 			const offset = 1;
 			let cut = tri.cut('x', offset);
