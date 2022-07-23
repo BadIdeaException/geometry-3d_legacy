@@ -25,7 +25,7 @@ export default class Mesh extends Array {
 	 * not intersect with the cut plane (other than touching). Note that the meshes are not guaranteed
 	 * to be contiguous even if the original mesh was. The `above` mesh is comprised of all
 	 * faces on the greater-or-equal side of the cutplane, the `below` mesh that with the less-than-or-equal ones.
-	 * Note that `above` or `below` may be empty.
+	 * Note that `above` or `below` may be empty meshes.
 	 */
 	cut(dimension, offset) {
 		let above = [];
@@ -50,6 +50,12 @@ export default class Mesh extends Array {
 		return target.map(face => face.filter(vertex => vertex[dimension] === offset));
 	}
 
+	/**
+	 * Checks this mesh for intersection with the ray. The ray intersects the mesh if it intersects at least
+	 * one face of the mesh.
+	 * @param  {Object} ray [description]
+	 * @return {boolean}     `true` if `ray` intersects with this mesh, `false` otherwise.
+	 */
 	rayIntersect(ray) {
 		this.some(face => face.rayIntersect(ray));
 	}
@@ -117,31 +123,12 @@ export default class Mesh extends Array {
 		return this.split().length > 1;
 	}
 
+	/**
+	 * Whether or not this mesh is empty. A mesh is empty if it contains no faces.
+	 * @return {Boolean} `true` iff this mesh is empty.
+	 */
 	isEmpty() {
 		return this.length === 0;
-	}
-
-	/**
-	 * The orientation of the mesh. This describes in which dimension the mesh is primarily oriented.
-	 * @return {String} One of
-	 * - `'longitudinal'`: The mesh is primarily in the yz plane
-	 * - `'deck'`: The mesh is primarily in the xy plane
-	 * - `'transverse'`: The mesh is primarily in the xz plane
-	 * - `'unknown'`: The meshes primary direction could not be determined, or the mesh is at exactly
-	 * 45 degrees between two planes.
-	 */
-	get orientation() {
-		let aggregateNormal = this
-			.map(face => face.normal)
-			.reduce((prev, curr) => prev.add(curr), Vector.ZERO);
-		if (Math.abs(aggregateNormal.x) > Math.abs(aggregateNormal.y) && Math.abs(aggregateNormal.x) > Math.abs(aggregateNormal.z))
-			return 'longitudinal';
-		else if (Math.abs(aggregateNormal.y) > Math.abs(aggregateNormal.x) && Math.abs(aggregateNormal.y) > Math.abs(aggregateNormal.z))
-			return 'deck';
-		else if (Math.abs(aggregateNormal.z) > Math.abs(aggregateNormal.x) && Math.abs(aggregateNormal.z) > Math.abs(aggregateNormal.y))
-			return 'transverse';
-		else
-			return 'unknown';	
 	}
 
 	get vertices() {
