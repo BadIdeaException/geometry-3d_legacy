@@ -17,7 +17,24 @@ function calculateNormal(triangle) {
 	return Vector.cross(u,v);	
 }
 
+/**
+ * A special `Polygon` with three vertices. This is the main building block of meshes.
+ *
+ * Triangles are always wound counter-clockwise. 
+ *
+ * `Triangle` inherits (indirectly) from `Array`, so array methods such as `map`, `filter`, etc. can be 
+ * applied to the triangle's vertices. It is important to not that such operations will return an `Array`,
+ * not a `Triangle`.
+ */
 export default class Triangle extends Polygon {
+	/**
+	 * Creates a new `Triangle` from the passed points. If the points are not passed in an order that produces
+	 * a counter-clockwise winding, they will be re-ordered.
+	 * @param  {Vector[]|Vector} a Either one of the vertices of the triangle, or an array of
+	 * all three vertices.
+	 * @param  {Vector} b The second vertex of the triangle. If `a` is an array, this parameter is ignored.
+	 * @param  {Vector} c The third vertex of the triangle. If `a` is an array, this parameter is ignored.
+	 */
 	constructor(a,b,c) {
 		if (!b && !c && Array.isArray(a)) {
 			b = a[1];
@@ -48,18 +65,31 @@ export default class Triangle extends Polygon {
 	 */
 	static get [Symbol.species]() { return Array };
 
+	/**
+	 * Whether this triangle equals `other`. Two triangles are considered equal if they have the
+	 * same set of vertices. More specifically, this method returns `true` if `other` is of length
+	 * 3 and for every vertex of this triangle, there is a vertex in `other` such that the two vertices
+	 * are equal (as determined by `Vector.equals()`). 
+	 *
+	 * This means that `other` does not necessarily need to be a `Triangle`. It may be a `Polygon` or simply
+	 * an array of vertices.
+	 * @param  {Vector[]} other The other shape to check. This will usually be a `Triangle`.
+	 * @return {boolean}       `true` if the other shape is equal to this triangle, `false` otherwise.
+	 */
 	equals(other) {
-		return this.length === other.length && this.every(v1 => other.some(v2 => v1.equals(v2)));
+		return other.length === 3 && this.every(v1 => other.some(v2 => v1.equals(v2)));
 	}
 
 	/**
-	 * Cuts this triangle along the plane perpendicular to `dimension` at `offset`. This can be thought of as 
-	 * returning an array of `Triangle`s corresponding to this `Triangle` such that all resulting triangles' vertices `dimension`
-	 * coordinates are either less-than-or-equal or greater-than-or-equal than `offset`, i.e. no resulting triangle
-	 * crosses `dimension`.
+	 * Cuts this triangle along the plane perpendicular to `dimension` at `offset`. The result is an object containing
+	 * a polygon for all vertices above-or-on the cut plane and below-or-on the cut plane, respectively. For edges crossing
+	 * the cut plane, the edge's intersection point with the cut plane is added. 
+	 *
+	 * If the triangle does not intersect with the cut plane, one of `above` or `below` will be an empty polygon.
+	 * If the triangle is co-planar with the cut plane, it will be returned in both `above` and `below`.
 	 * @param  {String} dimension One of `'x'`, `'y'` or `'z'`.
 	 * @param  {Number} offset    The offset at which to cut.
-	 * @return {Object}           An object containing two arrays of triangles making up the results of the cut: those
+	 * @return {Object}           An object containing two `Polygon`s making up the results of the cut: those
 	 * one the greater-than-or-equal side of the cut plane (`above`), and those on the less-than-or-equal side (`below`). 
 	 */
 	cut(dimension, offset) {
@@ -195,7 +225,21 @@ export default class Triangle extends Polygon {
 		return Math.abs(this.normal.length - u.length - v.length - w.length) < Constants.EPSILON;
 	}
 
+	/**
+	 * Intersects this triangle with the other triangle and returns the intersection shape. This may be
+	 *
+	 * - `null`, if the two triangles do not intersect,
+	 * - a `Vector` if the two triangles touch in a point,
+	 * - a `Segment` if the two triangles share an edge or just through each other,
+	 * - a `Polygon` if the two triangles are co-planar and overlapping.
+	 * 
+	 * @param  {Vector[]} other The other triangle with which to intersect. This may be a `Triangle`, but
+	 * must at least be an array containing three vertices.
+	 * @return {Vector|Segment|Triangle|Polygon|null}       The intersection shape of the two triangles.
+	 */
 	intersect(other) {
+		if (other.length !== 3) throw new TypeError(`Triangles can only be intersected with other triangles`);
+
 		/*
 			Triangle-triangle intersection test with the algorithm presented by Tomas Möller 1997
 			https://web.stanford.edu/class/cs277/resources/papers/Moller1997b.pdf
@@ -219,11 +263,6 @@ export default class Triangle extends Polygon {
 			 */
 			// The above requires that N1, N2, N3  are of unit length, so first we need to normalize them.
 			// This also means dividing d1 and d2 by N1 and N2, resp.:
-			// d1 /= N1.length;
-			// d2 /= N2.length;
-			// N1 = N1.scale(1 / N1.length);
-			// N2 = N2.scale(1 / N2.length);
-			// N3 = N3.scale(1 / N3.length);			
 			let det = Matrix.fromColumns(N1, N2, N3).determinant();
 			// Ordinarily, we would need to check that det !== 0. But we already know that pi1 and pi2 intersect,
 			// and have specifically constructed pi3 in a way that it intersects, too, so we can skip that
@@ -277,40 +316,6 @@ export default class Triangle extends Polygon {
 				case 3: return new Triangle(...result);
 				default: return new Polygon(...result);
 			}
-
-			// let result = [];
-			// // Do a pairwise intersection test on both faces
-			// for (let edge of this.edges) 
-			// 	for (let otherEdge of other.edges) {
-			// 		let isect = edge.intersect(otherEdge);
-			// 		// The triangles might share an edge, in which case edge.intersect returns a segment
-			// 		// Split this into its two endpoints, because result needs to be an array of points.
-			// 		if (isect instanceof Segment) {
-			// 			result.push(isect.a);
-			// 			result.push(isect.b);
-			// 		} else if (isect instanceof Vector)
-			// 			// Intersection was a point, push it into the intersections array
-			// 			result.push(isect);
-			// 	}
-
-			// if (result.length === 0) {
-			// 	// No edges intersected. But it could still be that one triangle is completely contained in the other.
-			// 	// For this, it's enough to check for if one vertex of this triangle is contained in the other triangle, and
-			// 	// vice versa.
-			// 	if (this.contains(other[0]))
-			// 		// If this triangle contains one vertex of the other triangle, it contains all of them (because there 
-			// 		// are no edge intersections).
-			// 		// Hence, the intersection of the two triangles is the contained triangle.
-			// 		return other;
-			// 	else if (other.contains(this[0]))
-			// 		// Analagous to the above
-			// 		return this;
-			// 	else 
-			// 		// There are no edge intersections and none of the triangles completely contains the other.
-			// 		// The triangles do not intersect.
-			// 		return null;
-			// } else
-			// 	return result;
 		}
 
 		// So now we know that the two triangles intersect in a line L: O + tD
@@ -409,6 +414,10 @@ export default class Triangle extends Polygon {
 			return null;
 	}
 
+	/**
+	 * Returns a bounding box for this triangle. 
+	 * @return {[type]} [description]
+	 */
 	getBoundingBox() {
 		let X = this.map(v => v.x);
 		let Y = this.map(v => v.y);
@@ -423,6 +432,13 @@ export default class Triangle extends Polygon {
 		}
 	}
 
+	/**
+	 * The edges of this triangle. They are ordered such that
+	 * - the first edge connects the first and second vertex,
+	 * - the second edge connects the second and third vertex,
+	 * - the third edge connects the third and first vertex.
+	 * @return {Segment[]} An array of three `Segment`s representing the edges of this triangle.
+	 */
 	get edges() {
 		return [
 			new Segment(this[0], this[1]),
@@ -430,4 +446,15 @@ export default class Triangle extends Polygon {
 			new Segment(this[2], this[0])
 		]
 	}
+
+	// Override some Polygon methods with simplified, faster versions specific to Triangle.
+	
+	/*
+		Triangles are always planar.
+	 */
+	isPlanar() { return true; }
+	/*
+		Triangles can be tesselated trivially.
+	 */
+	tesselate() { return [ this ]; }
 }
