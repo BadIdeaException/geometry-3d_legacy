@@ -1,6 +1,6 @@
 import Vector from './vector.js';
 import Matrix from './matrix.js';
-import { lineIntersect } from './util.js';
+import lineIntersect from './util/line-intersect.js';
 import Constants from './constants.js';
 
 export default class Segment {
