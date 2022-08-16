@@ -9,9 +9,9 @@
 		"url": "https://github.com/BadIdeaException/geometry-3d"
 	},
 	"scripts": {
-		"test": "node_modules/mocha/bin/mocha.js --colors --require test/mocha.conf.js test/*.spec.js",
-		"debug-test": "node_modules/mocha/bin/mocha.js --inspect=0.0.0.0:9229 --debug-brk --colors --require test/mocha.conf.js test/*.spec.js",
-		"debug-local-test": "node_modules/mocha/bin/mocha.js inspect --colors --require test/mocha.conf.js test/*.spec.js"
+		"test": "node_modules/mocha/bin/mocha.js --colors --require test/mocha.conf.js --recursive --extension .spec.js",
+		"debug-test": "node_modules/mocha/bin/mocha.js --inspect=0.0.0.0:9229 --debug-brk --colors --require test/mocha.conf.js --recursive --extension .spec.js",
+		"debug-local-test": "node_modules/mocha/bin/mocha.js inspect --colors --require test/mocha.conf.js --recursive --extension .spec.js"
 	},
 	"type": "module",
 	"author": "BadIdeaException",
