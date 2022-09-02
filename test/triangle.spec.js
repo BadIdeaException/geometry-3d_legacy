@@ -4,6 +4,15 @@ import Vector from '../src/vector.js';
 import Polygon from '../src/polygon.js';
 
 describe('Triangle', function() {
+	it('should have the same normal orientation as a Triangle as as a Polygon', function() {
+		const vertices = [
+			new Vector(1,0,0),
+			new Vector(5,5,5),
+			new Vector(-2,4,4)
+		];
+		expect(new Triangle(vertices).normal.unit()).to.deep.equal(new Polygon(vertices).normal.unit());
+	});
+	
 	describe('.contains', function() {
 		let tri;
 		let u;
