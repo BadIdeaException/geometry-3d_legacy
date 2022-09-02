@@ -8,6 +8,31 @@ export default class Polygon extends Array {
 		Object.assign(this, vertices);
 	}
 
+	/** 
+	 * The normal of the polygon. If the polygon is not planar, it will return the normal of a "best fit" plane
+	 * to the polygon's vertices. If the polygon has less than three vertices, the normal is undefined.
+	 */
+	get normal() {
+		if (this.length < 3) return undefined;
+
+		/*
+			This computes the polygon's normal with Newell's method for computing the plane equation.			
+			See e.g. http://cs.haifa.ac.il/~gordon/plane.pdf
+		 */
+		let x = 0;
+		let y = 0;
+		let z = 0;
+
+		for (let i = 0; i < this.length; i++) {
+			let u = this[i];
+			let v = this[(i + 1) % this.length];
+			x += (u.y - v.y) * (u.z + v.z);
+			y += (u.z - v.z) * (u.x + v.x);
+			z += (u.x - v.x) * (u.y + v.y);
+		}
+		return new Vector(x, y, z);
+	}
+
 	equals(other) {
 		if (other.length === 0) 
 			return this.length === 0;
@@ -78,11 +103,15 @@ export default class Polygon extends Array {
 		return true;
 	}
 
+	isEmpty() { 
+		return this.length === 0;
+	}
+	
 	/**
 	 * Tesselates this polygon into triangles.
 	 * @return {Triangle[]} A list of triangles that the polygon was split into.
 	 */
 	tesselate() {
-
+		return [ this ];
 	}
 }
