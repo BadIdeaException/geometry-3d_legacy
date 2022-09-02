@@ -3,19 +3,6 @@ import Segment from './segment.js';
 import Matrix from './matrix.js';
 import Polygon from './polygon.js';
 import Constants from './constants.js';
-import { clipPolygon } from './util.js';
-
-function calculateNormal(triangle) {
-	// u is the vector from point A to point B of this triangle
-	let u = triangle[1].subtract(triangle[0]);
-	// v is the vector from point B to point C of this triangle
-	let v = triangle[2].subtract(triangle[1]);
-	// Return the vector product of u and v.
-	// It is orthogonal to both u and v and its length is the
-	// area of the parallelogram described by u and v - 
-	// i.e., twice the size of the triangle.
-	return Vector.cross(u,v);	
-}
 
 /**
  * A special `Polygon` with three vertices. This is the main building block of meshes.
@@ -50,8 +37,18 @@ export default class Triangle extends Polygon {
 		}		
 		
 		super(a, b, c);
+	}
 
-		this.normal = calculateNormal(this);
+	get normal() {
+		// u is the vector from point A to point B of this triangle
+		let u = this[1].subtract(this[0]);
+		// v is the vector from point B to point C of this triangle
+		let v = this[2].subtract(this[1]);
+		// Return the vector product of u and v.
+		// It is orthogonal to both u and v and its length is the
+		// area of the parallelogram described by u and v - 
+		// i.e., twice the size of the triangle.
+		return Vector.cross(u, v);	
 	}
 
 	/*
@@ -304,7 +301,7 @@ export default class Triangle extends Polygon {
 			// However, we are not interested in just IF the triangles intersect, but in their actual intersection
 			// shape. Therefore, we will use the Sutherland-Hodgman algorithm from util.js, remove the duplicate
 			// last point if necessary, and construct a result object based on the length of the result.
-			let result = clipPolygon(this, other);
+			let result //= clipPolygon(this, other);
 
 			switch (result.length) {
 				case 0: return null;
