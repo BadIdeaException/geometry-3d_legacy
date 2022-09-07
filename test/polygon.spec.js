@@ -166,7 +166,7 @@ describe('Polygon', function() {
 		});
 	});
 
-	describe.only('.intersect', function() {
+	describe('.intersect', function() {
 		it('should throw when attempting to intersect polygons that are not co-planar', function() {
 			const polygon = new Polygon(
 				new Vector(1, 1, 1),
@@ -183,33 +183,31 @@ describe('Polygon', function() {
 			expect(polygon.intersect.bind(polygon, clip), 'not parallel').to.throw();
 		});
 
-		it('should intersect co-planar overlapping polygons', function() {
-			const polygonVertices = JSON.parse(readFileSync('test/fixtures/intersect_subject.json'));
-			const clipVertices = JSON.parse(readFileSync('test/fixtures/intersect_clip.json'));
-			const expectedVertices = JSON.parse(readFileSync('test/fixtures/intersect_expected.json'));
-
-			// We will run this test with the polygons lying on two different planes.
-			// The first time around, they will be on the x-y-plane, to better show faulty intersection calculation
-			// The second time, they will be on an arbitrary (skew) plane, to better show faulty re-extrapolation
-			// to the original plane.
-			[
-				// z-coordinate for given (x,y) for the x-y-plane
-				() => 0,
-				// z-coordinate for given (x,y) for the (arbitrary) plane -2x + 3y + 4z -5 = 0
-				({ x, y }) => (2*x - 3*y + 5) / 4,
-			].forEach(z => {
-				const polygon = new Polygon(polygonVertices.map(vertex => new Vector({ ...vertex, z: z(vertex) })));
-				const clip = new Polygon(clipVertices.map(vertex => new Vector({ ...vertex, z: z(vertex) })));
-
-				const expected = expectedVertices
+		
+		// We will run this test with the polygons lying on two different planes.
+		// The first time around, they will be on the x-y-plane, to better expose errors in the intersection calculation.
+		// The second time, they will be on an arbitrary (skew) plane, to better show faulty re-extrapolation
+		// to the original plane.
+		// eslint-disable-next-line mocha/no-setup-in-describe
+		[
+			// z-coordinate for given (x,y) for the x-y-plane
+			{ z: () => 0, description: 'intersect co-planar overlapping polygons on the x-y-plane' },
+			// z-coordinate for given (x,y) for the (arbitrary) plane -2x + 3y + 4z -5 = 0
+			{ z: ({ x, y }) => (2*x - 3*y + 5) / 4, description: 'intersect co-planar overlapping on an arbitrary (skew) plane' }
+		].forEach(({ z, description }) => it(`should ${description}`, function() {
+			const polygon = new Polygon(JSON.parse(readFileSync('test/fixtures/intersect_subject.json'))
+				.map(vertex => new Vector({ ...vertex, z: z(vertex) })));
+			const clip = new Polygon(JSON.parse(readFileSync('test/fixtures/intersect_clip.json'))
+				.map(vertex => new Vector({ ...vertex, z: z(vertex) })));
+			
+			const expected = JSON.parse(readFileSync('test/fixtures/intersect_expected.json'))
 					.map(poly =>
 					poly.map(vertex => new Vector({ ...vertex, z: z(vertex) })));
 
-				let result = polygon.intersect(clip);
-				expect(result).to.be.an('array').with.lengthOf(2);
-				expectMultiPolyEqual(result, expected);
-			});
-		});
+			let result = polygon.intersect(clip);
+			expect(result).to.be.an('array').with.lengthOf(2);
+			expectMultiPolyEqual(result, expected);
+		}));
 	});
 
 	it('.difference', function() {
