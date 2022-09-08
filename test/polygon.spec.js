@@ -195,12 +195,12 @@ describe('Polygon', function() {
 			// z-coordinate for given (x,y) for the (arbitrary) plane -2x + 3y + 4z -5 = 0
 			{ z: ({ x, y }) => (2*x - 3*y + 5) / 4, description: 'intersect co-planar overlapping on an arbitrary (skew) plane' }
 		].forEach(({ z, description }) => it(`should ${description}`, function() {
-			const polygon = new Polygon(JSON.parse(readFileSync('test/fixtures/intersect_subject.json'))
+			const polygon = new Polygon(JSON.parse(readFileSync('test/fixtures/intersect/subject.json'))
 				.map(vertex => new Vector({ ...vertex, z: z(vertex) })));
-			const clip = new Polygon(JSON.parse(readFileSync('test/fixtures/intersect_clip.json'))
+			const clip = new Polygon(JSON.parse(readFileSync('test/fixtures/intersect/clip.json'))
 				.map(vertex => new Vector({ ...vertex, z: z(vertex) })));
 			
-			const expected = JSON.parse(readFileSync('test/fixtures/intersect_expected.json'))
+			const expected = JSON.parse(readFileSync('test/fixtures/intersect/expected.json'))
 					.map(poly =>
 					poly.map(vertex => new Vector({ ...vertex, z: z(vertex) })));
 
@@ -210,31 +210,80 @@ describe('Polygon', function() {
 		}));
 	});
 
-	it('.difference', function() {
-			// Subject looks like a letter "c"
-			const subject =[
-				[1, 1],
-				[3, 1],
-				[2, 5],
-				[-3, 5],
-				[-2, 2]
-			];
-			const clip = [ 
-				[-1, 2],
-				[2, 2],
-				[2, 4],
-				[-1, 4],
-				[-2, 3]
-			];
+	describe('.subtract', function() {
+		it('should subtract two co-planar overlapping polygons', function() {
+			const z = () => 0;
 
-			let result = pc.difference(
-				[ subject ],
-				[ clip ])
-			expect(result).to.be.an('array').with.lengthOf(1);
-			result = reorder(result[0], expected);			
-			expect(result).to.deep.equal(expected);
-			console.log(JSON.stringify(result));		
+			const polygon = new Polygon(JSON.parse(readFileSync('test/fixtures/subtract/subject.json'))
+				.map(vertex => new Vector({ ...vertex, z: z(vertex) })));
+			const clip = new Polygon(JSON.parse(readFileSync('test/fixtures/subtract/clip.json'))
+				.map(vertex => new Vector({ ...vertex, z: z(vertex) })));
+			
+			const expected = JSON.parse(readFileSync('test/fixtures/subtract/expected.json'))
+					.map(poly =>
+					poly.map(vertex => new Vector({ ...vertex, z: z(vertex) })));
+
+			let result = polygon.subtract(clip);
+			expect(result).to.be.an('array').with.lengthOf(2);
+			expectMultiPolyEqual(result, expected);
+		});
+
+		describe('with hole', function() {
+			it('should break up the result if there is a hole', function() {
+				const polygon = new Polygon(JSON.parse(readFileSync('test/fixtures/subtract-with-hole-general/subject.json'))
+					.map(vertex => new Vector({ ...vertex, z: 0 })));
+
+				const clip = new Polygon(JSON.parse(readFileSync('test/fixtures/subtract-with-hole-general/clip.json'))
+					.map(vertex => new Vector({ ...vertex, z: 0 })));
+				const expected = JSON.parse(readFileSync('test/fixtures/subtract-with-hole-general/expected.json'))
+					.map(poly => poly.map(vertex => new Vector({ ...vertex, z: 0 })));
+
+				let result = polygon.subtract(clip);
+				expect(result).to.be.an('array').with.lengthOf(2);
+				expectMultiPolyEqual(result, expected);
+			});
+			
+			it('should not create superfluous vertices on the subject when breaking up holes', function() {
+				const polygon = new Polygon(JSON.parse(readFileSync('test/fixtures/subtract-with-hole-no-superfluous-on-subject/subject.json'))
+					.map(vertex => new Vector({ ...vertex, z: 0 })));
+				const clip = new Polygon(JSON.parse(readFileSync('test/fixtures/subtract-with-hole-no-superfluous-on-subject/clip.json'))
+					.map(vertex => new Vector({ ...vertex, z: 0 })));
+				const expected = JSON.parse(readFileSync('test/fixtures/subtract-with-hole-no-superfluous-on-subject/expected.json'))
+					.map(poly => poly.map(vertex => new Vector({ ...vertex, z: 0 })));
+				
+				let result = polygon.subtract(clip);
+				expect(result).to.be.an('array').with.lengthOf(2);
+				expectMultiPolyEqual(result, expected);
+			});		
+
+			it('should not create superfluous vertices on the clip when breaking up holes', function() {
+				const polygon = new Polygon(JSON.parse(readFileSync('test/fixtures/subtract-with-hole-no-superfluous-on-clip/subject.json'))
+					.map(vertex => new Vector({ ...vertex, z: 0 })));
+				const clip = new Polygon(JSON.parse(readFileSync('test/fixtures/subtract-with-hole-no-superfluous-on-clip/clip.json'))
+					.map(vertex => new Vector({ ...vertex, z: 0 })));
+				const expected = JSON.parse(readFileSync('test/fixtures/subtract-with-hole-no-superfluous-on-clip/expected.json'))
+					.map(poly => poly.map(vertex => new Vector({ ...vertex, z: 0 })));
+				
+				let result = polygon.subtract(clip);
+				expect(result).to.be.an('array').with.lengthOf(2);
+				expectMultiPolyEqual(result, expected);
+			});		
+
+			it('should not create superfluous vertices when subject and clip touch on the break-up point', function() {
+				const polygon = new Polygon(JSON.parse(readFileSync('test/fixtures/subtract-with-hole-no-superfluous-when-touching/subject.json'))
+					.map(vertex => new Vector({ ...vertex, z: 0 })));
+				const clip = new Polygon(JSON.parse(readFileSync('test/fixtures/subtract-with-hole-no-superfluous-when-touching/clip.json'))
+					.map(vertex => new Vector({ ...vertex, z: 0 })));
+				const expected = JSON.parse(readFileSync('test/fixtures/subtract-with-hole-no-superfluous-when-touching/expected.json'))
+					.map(poly => poly.map(vertex => new Vector({ ...vertex, z: 0 })));
+				
+				let result = polygon.subtract(clip);
+				expect(result).to.be.an('array').with.lengthOf(2);
+				expectMultiPolyEqual(result, expected);
+			});		
+		});
 	});
+
 
 	it('.union', function() {
 					// Subject looks like a letter "c"

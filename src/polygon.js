@@ -5,6 +5,8 @@ import winding from './util/winding.js';
 import sign from './util/sign.js';
 
 function oper(poly1, poly2, mode) {
+	const eq = (P, Q) => Math.abs(P.x - Q.x) < Constants.EPSILON && Math.abs(P.y - Q.y) < Constants.EPSILON;
+
 	// Make sure poly1 and poly2 are co-planar
 	const normal = poly1.normal;
 
@@ -19,18 +21,36 @@ function oper(poly1, poly2, mode) {
 	}
 
 	let result = pc[mode]([poly1.map(vertex => [ vertex[dim1], vertex[dim2] ])], [poly2.map(vertex => [ vertex[dim1], vertex[dim2] ])]);
-	// Make each polygon a collection of coordinates, instead of a collection of linear rings
-	result = result.map(poly => poly.flat());
+	// Transform coordinates back from array form to { x, y } form and remove duplicate last vertex
+	result = result.map(poly => poly.map(ring => {
+		ring = ring.map(([ x, y ]) => ({ x, y }))
+		// If the first and the last vertex are equal, remove the last vertex
+		if (eq(ring.at(0), ring.at(-1)))
+			ring.pop();
+		return ring;
+	}));
+
+	// result is now an array of polygons, 
+	// with each polygon being an array of linear rings, 
+	// with each linear ring being an implicitly-closed sequence of { x, y } vertices
+
+	// For any polygon that has a hole, lift the hole to be its own polygon. This allows for easier
+	// processing in the next step, when polygons with holes are broken up into parts.
+	for (let i = result.length - 1; i >= 0; i--) {
+		const poly = result[i];
+		if (poly.length > 2)
+			throw new Error(`Expected a polygon with at most one hole, but got ${poly.length - 1} holes`);
+		else if (poly.length === 2) {
+			result.push(poly.pop());
+		}
+		// Flatten the polygon from an array of linear rings to an array of vertices
+		result[i] = poly[0];
+	}
+	
 
 	if (result.length > 2 && result.filter(poly => winding(poly) === +1).length > 1)
 		throw new Error(`Expected a polygon with at most one hole, but got ${result.length - 1} holes`);
-	
-	result.map(poly => {
-		// If the first and the last point are equal, remove the last point
-		if (poly[0].every((coord, index) => Math.abs(coord - poly.at(-1)[index]) < Constants.EPSILON))
-			poly.pop();
-		return poly;
-	});
+
 
 	if (result.length > 1 && winding(result[1]) === +1) {
 		const exterior = result[0];
@@ -64,7 +84,7 @@ function oper(poly1, poly2, mode) {
 		*/
 	
 		// Find the bisection line
-		let y = (Math.min(...hole.map(v => v[1])) + Math.max(...hole.map(v => v[1]))) / 2;
+		let y = (Math.min(...hole.map(v => v.y)) + Math.max(...hole.map(v => v.y))) / 2;
 
 		// The left-most and right-most intersections of the hole with the bisection line
 		let C1;
@@ -75,23 +95,23 @@ function oper(poly1, poly2, mode) {
 		for (let i = 0; i < hole.length; i++) {
 			let Q1 = hole[i];
 			let Q2 = hole[(i + 1) % hole.length];			
-			if (Q1[1] <= y && Q2[1] > y) {
+			if (Q1.y <= y && Q2.y > y) {
 				// The GeoJSON spec guarantees hole to be wound clockwise,
 				// so if Q1.y <= y < Q2.y, that is guaruanteed to be a candidate for the left-most intersection C1.
-				let alpha = (y - Q1[1]) / (Q2[1] - Q1[1]);
-				let x = Q1[0] + alpha * (Q2[0] - Q1[0]);
+				let alpha = (y - Q1.y) / (Q2.y - Q1.y);
+				let x = Q1.x + alpha * (Q2.x - Q1.x);
 
-				if (x < C1[0] || !C1)  {
-					C1 = [ x, y ];
+				if (!C1 || x < C1.x)  {
+					C1 = { x, y };
 					indexC1 = i;
 				}
-			} else if (Q1[1] >= y && Q2[1] < y) {
+			} else if (Q1.y >= y && Q2.y < y) {
 				// For the same reasons as above, this can only be a candidate for the right-most intersection C2. 
-				let alpha = (y - Q1[1]) / (Q2[1] - Q1[1]);
-				let x = Q1[0] + alpha * (Q2[0] - Q1[0]);
+				let alpha = (y - Q1.y) / (Q2.y - Q1.y);
+				let x = Q1.x + alpha * (Q2.x - Q1.x);
 
-				if (x > C2[0] || !C2) {
-					C2 = [ x, y ];
+				if (!C2 || x > C2.x) {
+					C2 = { x, y };
 					indexC2 = i;
 				}
 			}
@@ -106,21 +126,21 @@ function oper(poly1, poly2, mode) {
 		for (let i = 0; i < exterior.length; i++) {
 			let P1 = exterior[i];
 			let P2 = exterior[(i + 1) % exterior.length];
-			if (P1[1] <= y && P2[1] > y) {
+			if (P1.y <= y && P2.y > y) {
 				// Because the exterior ring is wound counter-clockwise, this can only be a candidate for the
 				// right intersection S2.
-				let alpha = (y - P1[1]) / (P2[1] - P1[1]);
-				let x = P1[0] + alpha * (P2[0] - P1[0]);
-				if (!S2 || Math.abs(x - C2[0]) < Math.abs(S2[0] - C2[0])) {
-					S2 = [ x, y ];
+				let alpha = (y - P1.y) / (P2.y - P1.y);
+				let x = P1.x + alpha * (P2.x - P1.x);
+				if (!S2 || Math.abs(x - C2.x) < Math.abs(S2.x - C2.x)) {
+					S2 = { x, y };
 					indexS2 = i;
 				} 
-			} else if (P1[1] >= y && P2[1] < y) {
+			} else if (P1.y >= y && P2.y < y) {
 				// For the same reasons, this can only be a candidate for the left intersection S1.
-				let alpha = (y - P1[1]) / (P2[1] - P1[1]);
-				let x = P1[0] + alpha * (P2[0] - P1[0]);
-				if (!S1 || Math.abs(x - C1[0]) < Math.abs(S1[0] - C1[0])) {
-					S1 = [ x, y ];
+				let alpha = (y - P1.y) / (P2.y - P1.y);
+				let x = P1.x + alpha * (P2.x - P1.x);
+				if (!S1 || Math.abs(x - C1.x) < Math.abs(S1.x - C1.x)) {
+					S1 = { x, y };
 					indexS1 = i;
 				}
 			}
@@ -145,10 +165,14 @@ function oper(poly1, poly2, mode) {
 			else
 				bottom.push(exterior[i % exterior.length]);
 		}
-		top.push(S1);
-		top.push(C1);
-		bottom.push(S2);
-		bottom.push(C2);
+		if (!eq(S1, top.at(-1)))
+			top.push(S1);
+		if (!eq(C1, top.at(-1)))
+			top.push(C1);
+		if (!eq(S2, bottom.at(-1)))
+			bottom.push(S2);
+		if (!eq(C2, bottom.at(-1)))
+			bottom.push(C2);
 		// Trace the hole and add points to the correct result polygon
 		for (let i = indexC1 + 1; i < indexC1 + 1 + hole.length; i++) {
 			if (i <= indexC2)
@@ -156,19 +180,23 @@ function oper(poly1, poly2, mode) {
 			else
 				bottom.push(hole[i % hole.length]);
 		}
-		top.push(C2);
-		top.push(S2);
-		bottom.push(C1);
-		bottom.push(S1);
+		if (!eq(C2, top.at(-1)))
+			top.push(C2);
+		if (!eq(S2, top.at(-1)))
+			top.push(S2);
+		if (!eq(C1, bottom.at(-1)))
+			bottom.push(C1);
+		if (!eq(S1, bottom.at(-1)))
+			bottom.push(S1);
 
 		result = [ top, bottom ];
 	}
 
 	result = result.map(poly => 
-		poly.map(vertex => new Vector({
-			[dim1]: vertex[0],
-			[dim2]: vertex[1],
-			[axis]: -(normal[dim1] * vertex[0] + normal[dim2] * vertex[1] + d) / normal[axis]
+		poly.map(({ x, y }) => new Vector({
+			[dim1]: x,
+			[dim2]: y,
+			[axis]: -(normal[dim1] * x + normal[dim2] * y + d) / normal[axis]
 		})
 	));
 
@@ -279,6 +307,10 @@ export default class Polygon extends Array {
 
 	intersect(other) {
 		return oper(this, other, 'intersection');
+	}
+
+	subtract(other) {
+		return oper(this, other, 'difference');
 	}
 
 	isEmpty() { 
