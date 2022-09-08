@@ -6,7 +6,7 @@ describe('index.js', function() {
 		expect(actual).to.equal(EPSILON);
 	});
 
-	it('should default EPSILON to 1.0-8 when not specified differently', async function() {
+	it('should default EPSILON to 1.0e-8 when not specified differently', async function() {
 		const EPSILON = 1.0e-8;
 		let m = await import('../src/index.js');
 		const actual = m.EPSILON;
