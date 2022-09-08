@@ -226,8 +226,7 @@ export default class Triangle extends Polygon {
 	 * Intersects this triangle with the other triangle and returns the intersection shape. This may be
 	 *
 	 * - `null`, if the two triangles do not intersect,
-	 * - a `Vector` if the two triangles touch in a point,
-	 * - a `Segment` if the two triangles share an edge or just through each other,
+	 * - a `Segment` if the two triangles jut through each other,
 	 * - a `Polygon` if the two triangles are co-planar and overlapping.
 	 * 
 	 * @param  {Vector[]} other The other triangle with which to intersect. This may be a `Triangle`, but
@@ -299,14 +298,17 @@ export default class Triangle extends Polygon {
 			// then conducts pair-wise edge intersections. 
 			// 
 			// However, we are not interested in just IF the triangles intersect, but in their actual intersection
-			// shape. Therefore, we will use the Sutherland-Hodgman algorithm from util.js, remove the duplicate
-			// last point if necessary, and construct a result object based on the length of the result.
-			let result //= clipPolygon(this, other);
+			// shape. Therefore, we will conduct the inherited polygon intersection (since we already know, at this 
+			// point, that the two triangles are co-planar), and construct a result object based on the length of the result.
+			let result = super.intersect(other);
+
+			// If the intersection result was not empty, flatten it from a "set of result polygons" to "a result polygon".
+			// Intersection of two convex polygons can never have more than one result component, so doing this is safe.
+			if (result.length > 0) 
+				result = result[0];
 
 			switch (result.length) {
 				case 0: return null;
-				case 1: return result[0];
-				case 2: return new Segment(...result);
 				case 3: return new Triangle(...result);
 				default: return new Polygon(...result);
 			}
