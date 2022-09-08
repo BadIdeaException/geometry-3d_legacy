@@ -305,16 +305,21 @@ export default class Polygon extends Array {
 		return true;
 	}
 
+	/**
+	 * Intersects this polygon with another polygon. The two must be co-planar, or an error will be thrown. 
+	 * @param  {Polygon} other The polygon to intersect with
+	 * @return {Polygon[]}       An array of result polygons.
+	 */
 	intersect(other) {
-		return oper(this, other, 'intersection');
+		return oper(this, other, 'intersection').map(poly => new Polygon(poly));
 	}
 
 	subtract(other) {
-		return oper(this, other, 'difference');
+		return oper(this, other, 'difference').map(poly => new Polygon(poly));
 	}
 
 	add(other) {
-		return oper(this, other, 'union');
+		return oper(this, other, 'union').map(poly => new Polygon(poly));
 	}
 
 	isEmpty() { 

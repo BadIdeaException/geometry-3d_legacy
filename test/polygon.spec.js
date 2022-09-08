@@ -1,6 +1,5 @@
 import Vector from '../src/vector.js';
 import Polygon from '../src/polygon.js';
-import pc from 'polygon-clipping';
 import { readFileSync } from 'fs';
 
 const EPSILON = 1.0e-8;
@@ -29,6 +28,7 @@ function expectMultiPolyEqual(actual, expected) {
 	expected.forEach(expectedComponent => {
 		let actualComponent = actual.find(component => component.every(actualVertex => expectedComponent.some(expectedVertex => Math.abs(actualVertex.x - expectedVertex.x) < EPSILON && Math.abs(actualVertex.y - expectedVertex.y) < EPSILON)));
 		expect(actualComponent).to.exist;
+		expect(actualComponent).to.be.an.instanceof(Polygon);
 		expectPolyEqual(actualComponent, expectedComponent);
 	});
 }
