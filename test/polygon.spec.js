@@ -195,12 +195,12 @@ describe('Polygon', function() {
 			// z-coordinate for given (x,y) for the (arbitrary) plane -2x + 3y + 4z -5 = 0
 			{ z: ({ x, y }) => (2*x - 3*y + 5) / 4, description: 'intersect co-planar overlapping on an arbitrary (skew) plane' }
 		].forEach(({ z, description }) => it(`should ${description}`, function() {
-			const polygon = new Polygon(JSON.parse(readFileSync('test/fixtures/intersect/subject.json'))
+			const polygon = new Polygon(JSON.parse(readFileSync('test/fixtures/polygon/intersect/subject.json'))
 				.map(vertex => new Vector({ ...vertex, z: z(vertex) })));
-			const clip = new Polygon(JSON.parse(readFileSync('test/fixtures/intersect/clip.json'))
+			const clip = new Polygon(JSON.parse(readFileSync('test/fixtures/polygon/intersect/clip.json'))
 				.map(vertex => new Vector({ ...vertex, z: z(vertex) })));
 			
-			const expected = JSON.parse(readFileSync('test/fixtures/intersect/expected.json'))
+			const expected = JSON.parse(readFileSync('test/fixtures/polygon/intersect/expected.json'))
 					.map(poly =>
 					poly.map(vertex => new Vector({ ...vertex, z: z(vertex) })));
 
@@ -212,12 +212,12 @@ describe('Polygon', function() {
 
 	describe('.subtract', function() {
 		it('should subtract two co-planar overlapping polygons', function() {
-			const polygon = new Polygon(JSON.parse(readFileSync('test/fixtures/subtract/subject.json'))
+			const polygon = new Polygon(JSON.parse(readFileSync('test/fixtures/polygon/subtract/subject.json'))
 				.map(vertex => new Vector({ ...vertex, z: 0 })));
-			const clip = new Polygon(JSON.parse(readFileSync('test/fixtures/subtract/clip.json'))
+			const clip = new Polygon(JSON.parse(readFileSync('test/fixtures/polygon/subtract/clip.json'))
 				.map(vertex => new Vector({ ...vertex, z: 0 })));
 			
-			const expected = JSON.parse(readFileSync('test/fixtures/subtract/expected.json'))
+			const expected = JSON.parse(readFileSync('test/fixtures/polygon/subtract/expected.json'))
 					.map(poly =>
 					poly.map(vertex => new Vector({ ...vertex, z: 0 })));
 
@@ -228,12 +228,12 @@ describe('Polygon', function() {
 
 		describe('with hole', function() {
 			it('should break up the result if there is a hole', function() {
-				const polygon = new Polygon(JSON.parse(readFileSync('test/fixtures/subtract-with-hole-general/subject.json'))
+				const polygon = new Polygon(JSON.parse(readFileSync('test/fixtures/polygon/subtract-with-hole-general/subject.json'))
 					.map(vertex => new Vector({ ...vertex, z: 0 })));
 
-				const clip = new Polygon(JSON.parse(readFileSync('test/fixtures/subtract-with-hole-general/clip.json'))
+				const clip = new Polygon(JSON.parse(readFileSync('test/fixtures/polygon/subtract-with-hole-general/clip.json'))
 					.map(vertex => new Vector({ ...vertex, z: 0 })));
-				const expected = JSON.parse(readFileSync('test/fixtures/subtract-with-hole-general/expected.json'))
+				const expected = JSON.parse(readFileSync('test/fixtures/polygon/subtract-with-hole-general/expected.json'))
 					.map(poly => poly.map(vertex => new Vector({ ...vertex, z: 0 })));
 
 				let result = polygon.subtract(clip);
@@ -242,11 +242,11 @@ describe('Polygon', function() {
 			});
 			
 			it('should not create superfluous vertices on the subject when breaking up holes', function() {
-				const polygon = new Polygon(JSON.parse(readFileSync('test/fixtures/subtract-with-hole-no-superfluous-on-subject/subject.json'))
+				const polygon = new Polygon(JSON.parse(readFileSync('test/fixtures/polygon/subtract-with-hole-no-superfluous-on-subject/subject.json'))
 					.map(vertex => new Vector({ ...vertex, z: 0 })));
-				const clip = new Polygon(JSON.parse(readFileSync('test/fixtures/subtract-with-hole-no-superfluous-on-subject/clip.json'))
+				const clip = new Polygon(JSON.parse(readFileSync('test/fixtures/polygon/subtract-with-hole-no-superfluous-on-subject/clip.json'))
 					.map(vertex => new Vector({ ...vertex, z: 0 })));
-				const expected = JSON.parse(readFileSync('test/fixtures/subtract-with-hole-no-superfluous-on-subject/expected.json'))
+				const expected = JSON.parse(readFileSync('test/fixtures/polygon/subtract-with-hole-no-superfluous-on-subject/expected.json'))
 					.map(poly => poly.map(vertex => new Vector({ ...vertex, z: 0 })));
 				
 				let result = polygon.subtract(clip);
@@ -255,11 +255,11 @@ describe('Polygon', function() {
 			});		
 
 			it('should not create superfluous vertices on the clip when breaking up holes', function() {
-				const polygon = new Polygon(JSON.parse(readFileSync('test/fixtures/subtract-with-hole-no-superfluous-on-clip/subject.json'))
+				const polygon = new Polygon(JSON.parse(readFileSync('test/fixtures/polygon/subtract-with-hole-no-superfluous-on-clip/subject.json'))
 					.map(vertex => new Vector({ ...vertex, z: 0 })));
-				const clip = new Polygon(JSON.parse(readFileSync('test/fixtures/subtract-with-hole-no-superfluous-on-clip/clip.json'))
+				const clip = new Polygon(JSON.parse(readFileSync('test/fixtures/polygon/subtract-with-hole-no-superfluous-on-clip/clip.json'))
 					.map(vertex => new Vector({ ...vertex, z: 0 })));
-				const expected = JSON.parse(readFileSync('test/fixtures/subtract-with-hole-no-superfluous-on-clip/expected.json'))
+				const expected = JSON.parse(readFileSync('test/fixtures/polygon/subtract-with-hole-no-superfluous-on-clip/expected.json'))
 					.map(poly => poly.map(vertex => new Vector({ ...vertex, z: 0 })));
 				
 				let result = polygon.subtract(clip);
@@ -268,11 +268,11 @@ describe('Polygon', function() {
 			});		
 
 			it('should not create superfluous vertices when subject and clip touch on the break-up point', function() {
-				const polygon = new Polygon(JSON.parse(readFileSync('test/fixtures/subtract-with-hole-no-superfluous-when-touching/subject.json'))
+				const polygon = new Polygon(JSON.parse(readFileSync('test/fixtures/polygon/subtract-with-hole-no-superfluous-when-touching/subject.json'))
 					.map(vertex => new Vector({ ...vertex, z: 0 })));
-				const clip = new Polygon(JSON.parse(readFileSync('test/fixtures/subtract-with-hole-no-superfluous-when-touching/clip.json'))
+				const clip = new Polygon(JSON.parse(readFileSync('test/fixtures/polygon/subtract-with-hole-no-superfluous-when-touching/clip.json'))
 					.map(vertex => new Vector({ ...vertex, z: 0 })));
-				const expected = JSON.parse(readFileSync('test/fixtures/subtract-with-hole-no-superfluous-when-touching/expected.json'))
+				const expected = JSON.parse(readFileSync('test/fixtures/polygon/subtract-with-hole-no-superfluous-when-touching/expected.json'))
 					.map(poly => poly.map(vertex => new Vector({ ...vertex, z: 0 })));
 				
 				let result = polygon.subtract(clip);
@@ -284,12 +284,12 @@ describe('Polygon', function() {
 
 	describe('.add', function() {
 		it('should add two co-planar overlapping polygons', function() {
-			const polygon = new Polygon(JSON.parse(readFileSync('test/fixtures/add/subject.json'))
+			const polygon = new Polygon(JSON.parse(readFileSync('test/fixtures/polygon/add/subject.json'))
 				.map(vertex => new Vector({ ...vertex, z: 0 })));
-			const clip = new Polygon(JSON.parse(readFileSync('test/fixtures/add/clip.json'))
+			const clip = new Polygon(JSON.parse(readFileSync('test/fixtures/polygon/add/clip.json'))
 				.map(vertex => new Vector({ ...vertex, z: 0 })));
 			
-			const expected = JSON.parse(readFileSync('test/fixtures/add/expected.json'))
+			const expected = JSON.parse(readFileSync('test/fixtures/polygon/add/expected.json'))
 					.map(poly =>
 					poly.map(vertex => new Vector({ ...vertex, z: 0 })));
 
@@ -299,12 +299,12 @@ describe('Polygon', function() {
 		});		
 	
 		it('should break up the result if there is a hole', function() {
-			const polygon = new Polygon(JSON.parse(readFileSync('test/fixtures/add-with-hole/subject.json'))
+			const polygon = new Polygon(JSON.parse(readFileSync('test/fixtures/polygon/add-with-hole/subject.json'))
 				.map(vertex => new Vector({ ...vertex, z: 0 })));
 
-			const clip = new Polygon(JSON.parse(readFileSync('test/fixtures/add-with-hole/clip.json'))
+			const clip = new Polygon(JSON.parse(readFileSync('test/fixtures/polygon/add-with-hole/clip.json'))
 				.map(vertex => new Vector({ ...vertex, z: 0 })));
-			const expected = JSON.parse(readFileSync('test/fixtures/add-with-hole/expected.json'))
+			const expected = JSON.parse(readFileSync('test/fixtures/polygon/add-with-hole/expected.json'))
 				.map(poly => poly.map(vertex => new Vector({ ...vertex, z: 0 })));
 
 			let result = polygon.add(clip);
