@@ -314,10 +314,24 @@ export default class Polygon extends Array {
 		return oper(this, other, 'intersection').map(poly => new Polygon(poly));
 	}
 
+	/**
+	 * Subtracts another polygon from this polygon. The two must be co-planar, or an error will be thrown. 
+	 *
+	 * If the result would have a hole, it will be split into two.
+	 * @param  {Polygon} other The polygon to subtract.
+	 * @return {Polygon[]}       An array of result polygons.
+	 */
 	subtract(other) {
 		return oper(this, other, 'difference').map(poly => new Polygon(poly));
 	}
 
+	/**
+	 * Creates the union of two polygons. The two must be co-planar, or an error will be thrown. 
+	 *
+	 * If the result would have a hole, it will be split into two.
+	 * @param  {Polygon} other The polygon to unite with.
+	 * @return {Polygon[]}       An array of result polygons.
+	 */
 	add(other) {
 		return oper(this, other, 'union').map(poly => new Polygon(poly));
 	}
