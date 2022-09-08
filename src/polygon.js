@@ -313,6 +313,10 @@ export default class Polygon extends Array {
 		return oper(this, other, 'difference');
 	}
 
+	add(other) {
+		return oper(this, other, 'union');
+	}
+
 	isEmpty() { 
 		return this.length === 0;
 	}

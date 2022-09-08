@@ -212,16 +212,14 @@ describe('Polygon', function() {
 
 	describe('.subtract', function() {
 		it('should subtract two co-planar overlapping polygons', function() {
-			const z = () => 0;
-
 			const polygon = new Polygon(JSON.parse(readFileSync('test/fixtures/subtract/subject.json'))
-				.map(vertex => new Vector({ ...vertex, z: z(vertex) })));
+				.map(vertex => new Vector({ ...vertex, z: 0 })));
 			const clip = new Polygon(JSON.parse(readFileSync('test/fixtures/subtract/clip.json'))
-				.map(vertex => new Vector({ ...vertex, z: z(vertex) })));
+				.map(vertex => new Vector({ ...vertex, z: 0 })));
 			
 			const expected = JSON.parse(readFileSync('test/fixtures/subtract/expected.json'))
 					.map(poly =>
-					poly.map(vertex => new Vector({ ...vertex, z: z(vertex) })));
+					poly.map(vertex => new Vector({ ...vertex, z: 0 })));
 
 			let result = polygon.subtract(clip);
 			expect(result).to.be.an('array').with.lengthOf(2);
@@ -284,26 +282,34 @@ describe('Polygon', function() {
 		});
 	});
 
+	describe('.add', function() {
+		it('should add two co-planar overlapping polygons', function() {
+			const polygon = new Polygon(JSON.parse(readFileSync('test/fixtures/add/subject.json'))
+				.map(vertex => new Vector({ ...vertex, z: 0 })));
+			const clip = new Polygon(JSON.parse(readFileSync('test/fixtures/add/clip.json'))
+				.map(vertex => new Vector({ ...vertex, z: 0 })));
+			
+			const expected = JSON.parse(readFileSync('test/fixtures/add/expected.json'))
+					.map(poly =>
+					poly.map(vertex => new Vector({ ...vertex, z: 0 })));
 
-	it('.union', function() {
-					// Subject looks like a letter "c"
-			const subject =[
-				{ x: 0, y: 0 },
-				{ x: 0, y: 1 },
-				{ x: -2, y: 1 },
-				{ x: -2, y: 2 },
-				{ x: 0, y: 2 },
-				{ x: 0, y: 3 },
-				{ x: -3, y: 3 },
-				{ x: -3, y: 0 }
-			];
-			// Clip is the y-axis mirror image of subject
-			const clip = subject.map(vertex => ({ x: Math.abs(vertex.x), y: vertex.y }));
+			let result = polygon.add(clip);
+			expect(result).to.be.an('array').with.lengthOf(1);
+			expectMultiPolyEqual(result, expected);
+		});		
+	
+		it('should break up the result if there is a hole', function() {
+			const polygon = new Polygon(JSON.parse(readFileSync('test/fixtures/add-with-hole/subject.json'))
+				.map(vertex => new Vector({ ...vertex, z: 0 })));
 
-			let result = pc.union(
-				[ subject.map(vertex => [ vertex.x, vertex.y ]) ],
-				[ clip.map(vertex => [ vertex.x, vertex.y ]) ])
-			console.log(result[0]);		
+			const clip = new Polygon(JSON.parse(readFileSync('test/fixtures/add-with-hole/clip.json'))
+				.map(vertex => new Vector({ ...vertex, z: 0 })));
+			const expected = JSON.parse(readFileSync('test/fixtures/add-with-hole/expected.json'))
+				.map(poly => poly.map(vertex => new Vector({ ...vertex, z: 0 })));
 
-	})
+			let result = polygon.add(clip);
+			expect(result).to.be.an('array').with.lengthOf(2);
+			expectMultiPolyEqual(result, expected);
+		});			
+	});
 });
