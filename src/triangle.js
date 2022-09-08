@@ -101,99 +101,74 @@ export default EPSILON => {
 		 * @return {Object}           An object containing two `Polygon`s making up the results of the cut: those
 		 * one the greater-than-or-equal side of the cut plane (`above`), and those on the less-than-or-equal side (`below`). 
 		 */
-		cut(dimension, offset) {
-			const otherDimensions = ['x','y','z'].filter(dim => dim !== dimension);
+		cut(normal, offset) {
+			// Helper function that calculates the intersection point of the line given by P1 and P2 with the
+			// plane given by normal and offset
+			// It is assumed that the line is not parallel to the plane
+			function linePlaneIntersect(normal, offset, P1, P2) {
+				let a = (offset - Vector.dot(normal, P1)) / (Vector.dot(normal, P2) - Vector.dot(normal, P1));
+				return P1.add(P2.subtract(P1).scale(a));
+			}
 
-			let result;
-			if (this.every(v => Math.abs(v[dimension] - offset) < EPSILON)) {
+			// Calculate the signed distances of this triangle from the cut plane
+			const distances = this.map(vertex => Vector.dot(normal, vertex) - offset);
+			if (distances.every(d => Math.abs(d) < EPSILON)) {
 				// The triangle is co-planar with the cut plane. 
 				// Assign it to both above and below.
-				result = { above: this, below: this };
-			} else if (this.every(v => v[dimension] >= offset)) {
+				return { above: this, below: this };
+			} else if (distances.every(d => d > -EPSILON)) {
 				// The triangle is completely on the greater-or-equal side of the cut plane. 
 				// Assign it to above and an empty polygon to below.
-				result = { above: this, below: new Polygon() };
-			} else if (this.every(v => v[dimension] <= offset)) {
+				return { above: this, below: new Polygon() };				
+			} else if (distances.every(d => d < EPSILON)) {
 				// The triangle is completely on the less-than-or-equal side of the cut plane.
 				// Assign it to below and an empty polygon to above.
-				result = { above: new Polygon(), below: this };
-			} else if (this.some(v => v[dimension] > offset) && this.some(v => v[dimension] < offset)) {
+				return { above: new Polygon(), below: this };				
+			} else if (distances.some(d => d > -EPSILON) && distances.some(d => d < EPSILON)) {
 				// The triangle crosses the cut plane. 
-				// The vertices making up what will become the trapezoid after the cut
-				let above =  [];// trapezoid = [];
-				// The vertices making up what will become the triangle after the cut
-				let below = []; //triangular = [];
+
+				// Initialize the lists that will hold vertices above and below the cut plane, resp.
+				// Initialize the variable for a vertex that is right on the cut plane.
+				let above = [];
+				let below = [];
 				let on = null;
-				let switched = false;
-				// Assign the face's vertices to the trapezoid and triangular lists
-				this.forEach(v => {
-					if (Math.abs(v[dimension] - offset) < EPSILON)
-						on = v;
-					else if (v[dimension] > offset)
-						above.push(v);
-					else if (v[dimension] < offset)
-						below.push(v);
+				distances.forEach((d, index) => {
+					if (Math.abs(d) < EPSILON)
+						on = this[index];
+					else if (d > EPSILON)
+						above.push(this[index]);
+					else 
+						below.push(this[index]);
 				});
 
-				// If one vertex is right on the cut plane, above and below will each contain one remaining vertex each.
-				// The edge between them crosses the cut plane. Calculate this edge's intersection point with the cut
-				// plane. 
-				// Above and below are each triangles.
 				if (on) {
-					let a = (above[0][dimension] - offset) / (above[0][dimension] - below[0][dimension]);
-					let p = new Vector({
-						[dimension]: offset,
-						[otherDimensions[0]]: above[0][otherDimensions[0]] + a * (below[0][otherDimensions[0]] - above[0][otherDimensions[0]]),
-						[otherDimensions[1]]: above[0][otherDimensions[1]] + a * (below[0][otherDimensions[1]] - above[0][otherDimensions[1]]),
-					});
-					result = {
-						above: new Triangle(above[0], on, p),
-						below: new Triangle(below[0], on, p)
-					}
+					// If one vertex is right on the cut plane, above and below will each contain one remaining vertex each.
+					// The edge between them crosses the cut plane. Calculate this edge's intersection point with the cut
+					// plane. 
+					// Above and below are each triangles.
+					let P = linePlaneIntersect(normal, offset, below[0], above[0]);
+					return {
+						above: new Triangle(above[0], P, on),
+						below: new Triangle(P, below[0], on)
+					};					
 				} else {
 					// At this point we know none of the vertices are directly on the cut plane. This means there is one
 					// vertex on the one side and two on the other. 
 					// Therefore, cutting will result in one triangle and one trapezoid. 
 					// 
-					// Calculate the two intersection points with the cut plane by determining the ratio by which
-					// the intersecting edge's "dimension" coordinate needs to be shortened. The other coordinates
-					// then must be shortened by the same ratio (because edges are straight).
-					let triangular; let trapezoid;
-					if (above.length === 2) {
-						trapezoid = above;
-						triangular = below;
-					} else {
-						trapezoid = below;
-						triangular = above;
-					}
-					let a0 = (trapezoid[0][dimension] - offset) / (trapezoid[0][dimension] - triangular[0][dimension]);
-					let p0 = new Vector({
-						[dimension]: offset, 
-						[otherDimensions[0]]: trapezoid[0][otherDimensions[0]] + (triangular[0][otherDimensions[0]] - trapezoid[0][otherDimensions[0]]) * a0, 
-						[otherDimensions[1]]: trapezoid[0][otherDimensions[1]] + (triangular[0][otherDimensions[1]] - trapezoid[0][otherDimensions[1]]) * a0
-					});
+					// Calculate the two intersection points with the cut plane.
+					const triangular = above.length === 1 ? above : below;
+					const trapezoidal = above.length === 2 ? above : below;
 
-					let a1 = (trapezoid[1][dimension] - offset) / (trapezoid[1][dimension] - triangular[0][dimension]);
-					let p1 = new Vector({
-						[dimension]: offset,
-						[otherDimensions[0]]: trapezoid[1][otherDimensions[0]] + (triangular[0][otherDimensions[0]] - trapezoid[1][otherDimensions[0]]) * a1,
-						[otherDimensions[1]]: trapezoid[1][otherDimensions[1]] + (triangular[0][otherDimensions[1]] - trapezoid[1][otherDimensions[1]]) * a1
-					});
-
-					if (above === triangular) { 
-						result = {
-							above: new Triangle(triangular[0], p0, p1),
-							below: new Polygon(trapezoid[0], trapezoid[1], p1, p0)
-						};
-					} else {
-						result = {
-							above: new Polygon(trapezoid[0], trapezoid[1], p1, p0),
-							below: new Triangle(triangular[0], p1, p0)
-						}
+					let intersections = trapezoidal.map(vertex => linePlaneIntersect(normal, offset, vertex, triangular[0])).reverse();
+					above = above.concat(intersections);
+					below = below.concat(intersections);
+					return {
+						above: new (above.length > 3 ? Polygon : Triangle)(above),
+						below: new (below.length > 3 ? Polygon : Triangle)(below)
 					}
 				}
 			}
-			return result;
 		}
 
 		/**

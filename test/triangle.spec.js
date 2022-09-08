@@ -88,80 +88,78 @@ describe('Triangle', function() {
 		});
 
 		it('should not cut the triangle if it does not intersect the cut plane', function() {
-			['x', 'y', 'z'].forEach(function(dim) {
-				expect(tri.cut(dim, -10)).to.be.an('object').with.property('above').that.deep.equals(tri);
-				expect(tri.cut(dim, +10)).to.be.an('object').with.property('below').that.deep.equals(tri);
+			[
+				new Vector(1, 0, 0),
+				new Vector(0, 1, 0),
+				new Vector(0, 0, 1),
+				new Vector(1, 1, 1)
+			].forEach(normal => {
+				expect(tri.cut(normal, -20)).to.be.an('object').with.property('above').that.deep.equals(tri);
+				expect(tri.cut(normal, +20)).to.be.an('object').with.property('below').that.deep.equals(tri);
 			});
 		});
 
-		it('should have the triangle in both above and below if it is co-planar with the cut plane', function() {
-			const dim = 'z';
-			const offset = 1;
-			let vertices = tri.map(v => new Vector({ ...v, [dim]: offset }));
-			tri = new Triangle(...vertices);
-
-			let cut = tri.cut(dim, offset);
+		it('should have the triangle in both above and below if it is co-planar with the cut plane', function() {			
+			const normal = tri.normal;
+			const offset = Vector.dot(tri.normal, tri[0]);
+			
+			let cut = tri.cut(normal, offset);
 			expect(cut).to.be.an('object').with.all.keys('above', 'below');
 			expect(cut.above).to.deep.equal(tri);
 			expect(cut.below).to.deep.equal(tri);
 		});
 
 		it('should cut the triangle into two triangles if one of its vertices is on the cut plane and the other two are on opposite sides', function() {
-			const offset = 1;
-			let cut = tri.cut('x', offset);
-			expect(cut).to.be.an('object').with.all.keys('above', 'below');
+			const normal = new Vector(1, 1, 1);
+			const offset = Vector.dot(normal, tri[2]);
+			let cut = tri.cut(normal, offset);
+
+			expect(cut).to.be.an('object').with.keys('above', 'below');
 			expect(cut.above).to.be.an.instanceof(Triangle);
 			expect(cut.below).to.be.an.instanceof(Triangle);
 			// Above should contain the vertex that is on the cut plane
-			expect(cut.above).to.contain(tri[0]);
+			expect(cut.above).to.contain(tri[2]);
 			// Above should contain the vertex that is on the positive side of the cut plane
 			expect(cut.above).to.contain(tri[1]);
 			// The remaining vertex should be on the cut plane as well
-			expect(cut.above).to.satisfy(tri => tri.some(vertex => 
-				vertex !== tri[0] 
-				&& vertex !== tri[1] 
-				&& vertex.x === offset));
+			expect(cut.above.find(v => !tri.includes(v))).to.satisfy(v => Vector.dot(normal, v) === offset);
+			
 			// Below should contain the vertex that is on the cut plane
-			expect(cut.below).to.contain(tri[0]);
-			// Below should contain the vertex that is on the negative side of the cut plane
 			expect(cut.below).to.contain(tri[2]);
+			// Below should contain the vertex that is on the negative side of the cut plane
+			expect(cut.below).to.contain(tri[0]);
 			// The remaining vertex should be on the cut plane as well
-			expect(cut.below).to.satisfy(tri => tri.some(vertex => 
-				vertex !== tri[0]
-				&& vertex !== tri[2]
-				&& vertex.x === offset));
+			expect(cut.below.find(v => !tri.includes(v))).to.satisfy(v => Vector.dot(normal, v) === offset);
 		});
 
 		it('should cut the triangle into above and below parts if it intersects the cut plane', function() {			
+			const normal = new Vector(1, 1, 1);
 			const offset = 2;
-			['x', 'y', 'z'].forEach(function(dim) {
-				let cut = tri.cut(dim, offset);
-				// How many of tri's vertices should be in above?
-				// If this is 1, above should be a triangle
-				// If it is 2, above should be a polygon that is not a triangle
-				let len = tri.map(v => v[dim]).filter(coord => coord > offset).length;
+			let cut = tri.cut(normal, offset);
 
-				expect(cut).to.be.an('object').with.all.keys('above', 'below');
-				if (len === 2)
-					expect(cut.above).to.be.an.instanceof(Polygon).and.not.an.instanceof(Triangle);
-				else
-					expect(cut.above).to.be.an.instanceof(Triangle);
-				// Above should include all of tri's vertices that have a dim coordinate greater than the cut plane offset
-				expect(cut.above).to.include.all.members(tri.filter(v => v[dim] > offset));
-				// All points that are not vertices of tri should be on the cut plane
-				expect(cut.above).to.satisfy(polygon => polygon
-							.filter(v => !tri.includes(v))
-							.every(v => v[dim] === offset));
+			expect(cut).to.be.an('object').with.keys('above', 'below');
+			expect(cut.above.length + cut.below.length).to.equal(7);
+			// All of tri's vertices should be present
+			expect(cut.above.concat(cut.below)).to.include.members(tri);
 
-				if (len === 1)
-					expect(cut.below).to.be.an.instanceof(Polygon).and.not.an.instanceof(Triangle);
-				else
-					expect(cut.below).to.be.an.instanceof(Triangle);
-				expect(cut.below).to.include.all.members(tri.filter(v => v[dim] < offset));
-				expect(cut.below).to.satisfy(polygon => polygon
-							.filter(v => !tri.includes(v))
-							.every(v => v[dim] === offset));							
+			let intersections = cut.above.filter(v => !tri.includes(v));
+			// There should be two new vertices in above
+			expect(intersections).to.have.lengthOf(2);
+			intersections.forEach(isect => {
+				// Each of them should also be in below
+				expect(cut.below).to.contain(isect);
+				// Each of them should be on the cut plane
+				expect(Vector.dot(normal, isect)).to.be.approximately(offset, EPSILON);
 			});
+
+			[ cut.above, cut.below ].forEach(poly => {
+				if (poly.length === 3)
+					expect(poly).to.be.an.instanceof(Triangle);
+				else
+					expect(poly).to.be.an.instanceof(Polygon).but.not.an.instanceof(Triangle);
+			});
+			cut.above.forEach(vertex => expect(Vector.dot(normal, vertex)).to.be.at.least(offset - EPSILON));
+			cut.below.forEach(vertex => expect(Vector.dot(normal, vertex)).to.be.at.most(offset + EPSILON));
 		});
 	});
 
