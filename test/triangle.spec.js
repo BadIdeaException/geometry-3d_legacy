@@ -1,9 +1,25 @@
-import Triangle from '../src/triangle.js';
-import Segment from '../src/segment.js';
-import Vector from '../src/vector.js';
-import Polygon from '../src/polygon.js';
+import TriangleFactory from '../src/triangle.js';
+import SegmentFactory from '../src/segment.js';
+import VectorFactory from '../src/vector.js';
+import PolygonFactory from '../src/polygon.js';
+
+const EPSILON = 1.0e-8;
+const Vector = VectorFactory(EPSILON);
+const Segment = SegmentFactory(EPSILON);
+const Polygon = PolygonFactory(EPSILON);
+const Triangle = TriangleFactory(EPSILON);
 
 describe('Triangle', function() {
+	it('should be a Triangle, and a Polygon', function() {
+		const tri = new Triangle(
+			new Vector(1,0,0),
+			new Vector(5,5,5),
+			new Vector(-2,4,4)
+		);
+		expect(tri).to.be.an.instanceof(Triangle);
+		expect(tri).to.be.an.instanceof(Polygon);
+	});
+
 	it('should have the same normal orientation as a Triangle as as a Polygon', function() {
 		const vertices = [
 			new Vector(1,0,0),

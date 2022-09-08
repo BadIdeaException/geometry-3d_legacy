@@ -1,8 +1,10 @@
-import Vector from '../src/vector.js';
-import Polygon from '../src/polygon.js';
+import VectorFactory from '../src/vector.js';
+import PolygonFactory from '../src/polygon.js';
 import { readFileSync } from 'fs';
 
 const EPSILON = 1.0e-8;
+const Vector = VectorFactory(EPSILON);
+const Polygon = PolygonFactory(EPSILON);
 
 function reorder(actual, expected) {
 	let index = actual.findIndex(vertex => expected[0].equals(vertex));

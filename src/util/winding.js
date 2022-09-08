@@ -1,5 +1,3 @@
-import sign from './sign.js';
-
 /**
  * Calculates the winding order of the given 2D vertices. The result is -1 if the winding is 
  * counter-clockwise, and +1 if it is clockwise.
@@ -7,7 +5,9 @@ import sign from './sign.js';
  * @return {number}   -1 if `vertices` is wound counter-clockwise, +1 if `vertices` is wound 
  * clockwise. 0 if all vertices are collinear.
  */
-export default function winding(vertices) {
+export default function winding(vertices, EPSILON) {
+	const sign = x => Math.abs(x) < EPSILON ? 0 : Math.sign(x);
+
 	if (vertices.length < 3) return undefined;
 
 	let area = 0;

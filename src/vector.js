@@ -1,7 +1,12 @@
-import Constants from './constants.js';
+const VectorType = Symbol();
 
-export default class Vector {
+export default EPSILON => class Vector {
 	static ZERO = new Vector(0,0,0);
+
+	static [VectorType];
+	static [Symbol.hasInstance](instance) {
+		return VectorType in Object.getPrototypeOf(instance).constructor;
+	}
 
 	x;
 	y;
@@ -41,9 +46,9 @@ export default class Vector {
 	}
 
 	equals(v) {
-		return Math.abs(this.x - v.x) < Constants.EPSILON
-			&& Math.abs(this.y - v.y) < Constants.EPSILON 
-			&& Math.abs(this.z - v.z) < Constants.EPSILON;
+		return Math.abs(this.x - v.x) < EPSILON
+			&& Math.abs(this.y - v.y) < EPSILON 
+			&& Math.abs(this.z - v.z) < EPSILON;
 	}
 	
 	toString(precision = 5) {		

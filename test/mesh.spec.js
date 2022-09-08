@@ -1,8 +1,13 @@
-import Mesh from '../src/mesh.js';
-import Triangle from '../src/triangle.js';
-import Vector from '../src/vector.js';
+import MeshFactory from '../src/mesh.js';
+import TriangleFactory from '../src/triangle.js';
+import VectorFactory from '../src/vector.js';
 
-describe.only('Mesh', function() {
+const EPSILON = 1.0e-8;
+const Vector = VectorFactory(EPSILON);
+const Triangle = TriangleFactory(EPSILON);
+const Mesh = MeshFactory(EPSILON);
+
+describe('Mesh', function() {
 	let mesh;
 	beforeEach(function() {
 		let faces = [
@@ -72,6 +77,26 @@ describe.only('Mesh', function() {
 			expect(cut.above).to.satisfy(mesh => mesh.every(face => face.every(vertex => vertex[dim] >= offset)));
 			// All vertices of all faces in cut.below need to have a "dim" coordinate less than or equal to offset
 			expect(cut.below).to.satisfy(mesh => mesh.every(face => face.every(vertex => vertex[dim] <= offset)));
+		});
+	});
+
+	describe('.split', function() {
+		it('should leave an already contiguous mesh unchanged', function() {
+			let split = mesh.split();
+			expect(split).to.be.an('array').with.lengthOf(1);
+			expect(split[0]).to.deep.equal(mesh);
+		});
+
+		it('should split a non-contiguous mesh into congiuous sub-meshes', function() {
+			let submeshA = mesh.slice(); // Shallow copy
+			let submeshB = [
+				new Triangle(new Vector(-5, -5, -5), new Vector(-8, -8, -8), new Vector(-6, -7, -3)),
+				new Triangle(new Vector(-5, -5, -5), new Vector(-8, -8, -8), new Vector(-10, -10, -10))
+			];
+			mesh = new Mesh(...submeshA, ...submeshB);
+
+			let split = mesh.split();
+			expect(split).to.be.an('array').with.deep.members([ submeshA, submeshB ]);
 		});
 	});
 });

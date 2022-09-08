@@ -1,8 +1,10 @@
-import Vector from '../vector.js';
-import Matrix from '../matrix.js';
-import Constants from '../constants.js';
+import VectorFactory from '../vector.js';
+import MatrixFactory from '../matrix.js';
 
-export default function lineIntersect(a1, b1, a2, b2) {
+export default function lineIntersect(a1, b1, a2, b2, EPSILON = 1.0e-8) {
+	const Vector = VectorFactory(EPSILON);
+	const Matrix = MatrixFactory(EPSILON);
+	
 	/*
 		This function implements the algorithm by Ron Goldman, Univerity of Waterloo, 
 		as found in Andrew Glassner, "Graphics Gems", p. 304
@@ -19,11 +21,11 @@ export default function lineIntersect(a1, b1, a2, b2) {
 
 	let cross = Vector.cross(direction1, direction2);
 	let crossLengthSquared = lengthSquared(cross);
-	if (crossLengthSquared < Constants.EPSILON) { // mathematically equivalent to cross.length === 0 but computationally cheaper
+	if (crossLengthSquared < EPSILON) { // mathematically equivalent to cross.length === 0 but computationally cheaper
 		// Lines are parallel
 		// Are they also co-linear?
 		let t = (a2.x - a1.x) / direction1.x;
-		if (Math.abs(a2.y - a1.y - t * direction1.y) < Constants.EPSILON && Math.abs(a2.z - a1.z - t * direction1.z) < Constants.EPSILON) {
+		if (Math.abs(a2.y - a1.y - t * direction1.y) < EPSILON && Math.abs(a2.z - a1.z - t * direction1.z) < EPSILON) {
 			return { a: a1, b: b1 };
 		} else 
 			return null;

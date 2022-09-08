@@ -1,8 +1,9 @@
-import Segment from '../src/segment.js';
-import Vector from '../src/vector.js';
-import Constants from '../src/constants.js';
+import SegmentFactory from '../src/segment.js';
+import VectorFactory from '../src/vector.js';
 
-const EPSILON = Constants.EPSILON;
+const EPSILON = 1.0e-8;
+const Vector = VectorFactory(EPSILON);
+const Segment = SegmentFactory(EPSILON);
 
 describe('Segment', function() {	
 	describe('.collinear', function() {

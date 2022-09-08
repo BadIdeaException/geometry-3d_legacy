@@ -1,4 +1,7 @@
-import winding from '../../src/util/winding.js';
+import _winding from '../../src/util/winding.js';
+
+const EPSILON = 1.0e-8;
+const winding = (vertices) => _winding(vertices, EPSILON);
 
 describe('winding', function() {
 	it('should return -1 for counter-clockwise and +1 for clockwise ordering', function() {

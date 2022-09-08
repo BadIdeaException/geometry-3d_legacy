@@ -1,4 +1,4 @@
-export default class Matrix extends Array {
+export default () => class Matrix extends Array {
 	constructor(m11, m12, m13, m21, m22, m23, m31, m32, m33) {
 		super(9);
 		this[0] = m11;
