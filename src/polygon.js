@@ -1,11 +1,14 @@
 import VectorFactory from './vector.js';
+import TriangleFactory from './triangle.js';
 import pc from 'polygon-clipping';
+import earcut from 'earcut';
 import winding from './util/winding.js';
 
 const PolygonType = Symbol();
 
 export default EPSILON => {
 	const Vector = VectorFactory(EPSILON);
+
 	// Helper function that works like Math.sign, but returns 0 if |x| < EPSILON rather than x === 0
 	const sign = x => Math.abs(x) < EPSILON ? 0 : Math.sign(x);
 
@@ -355,7 +358,18 @@ export default EPSILON => {
 		 * @return {Triangle[]} A list of triangles that the polygon was split into.
 		 */
 		tesselate() {
-			return [ this ];
+			// This is the only method using Triangle.
+			// We can't initialize the Triangle constructor as we did the other ones,
+			// because it would lead to the TriangleFactory and the PolygonFactory calling
+			// each other in an infinite loop.			
+			const Triangle = TriangleFactory(EPSILON);
+
+			let vertices = this.map(({ x, y, z }) => [ x, y, z ]).flat();
+			let indices = earcut(vertices, null, 3);
+			let triangles = [];
+			for (let i = 0; i < indices.length; i = i +3)
+				triangles.push(new Triangle(this[indices[i]], this[indices[i + 1]], this[indices[i + 2]]));
+			return triangles;
 		}
 	}
 	return Polygon;

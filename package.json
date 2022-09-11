@@ -25,6 +25,7 @@
 		"mocha": "^10.0.0"
 	},
 	"dependencies": {
+		"earcut": "^2.2.4",
 		"polygon-clipping": "^0.15.3"
 	}
 }
