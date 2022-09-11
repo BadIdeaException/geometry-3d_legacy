@@ -31,18 +31,18 @@ export default EPSILON => {
 
 		/**
 		 * Cuts this mesh along the plane perpendicular to `dimension` at `offset`.
-		 * @param  {String} dimension One of `'x'`, `'y'` or `'z'`.
-		 * @param  {Number} offset    The offset at which to cut.
+		 * @param  {Vector} normal The normal vector of the cut plane.
+		 * @param  {Number} distance    The distance from origin of the cut plane.
 		 * @return {Object}		An object of two meshes (`above` and `below`) that combined equal this mesh, but do
 		 * not intersect with the cut plane (other than touching). Note that the meshes are not guaranteed
 		 * to be contiguous even if the original mesh was. The `above` mesh is comprised of all
 		 * faces on the greater-or-equal side of the cutplane, the `below` mesh that with the less-than-or-equal ones.
 		 * Note that `above` or `below` may be empty meshes.
 		 */
-		cut(dimension, offset) {
+		cut(normal, distance) {
 			let above = [];
 			let below = [];
-			let cutResults = this.map(face => face.cut(dimension, offset));
+			let cutResults = this.map(face => face.cut(normal, distance));
 				
 			for (let cutResult of cutResults) {
 				above = above.concat(cutResult.above.isEmpty() ? [] : cutResult.above.tesselate());
