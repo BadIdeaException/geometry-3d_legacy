@@ -1,11 +1,7 @@
-import MeshFactory from '../src/mesh.js';
-import TriangleFactory from '../src/triangle.js';
-import VectorFactory from '../src/vector.js';
-
 const EPSILON = 1.0e-8;
-const Vector = VectorFactory(EPSILON);
-const Triangle = TriangleFactory(EPSILON);
-const Mesh = MeshFactory(EPSILON);
+const Vector = (await import(`../src/vector.js?epsilon=${EPSILON}`)).default;
+const Triangle = (await import(`../src/triangle.js?epsilon=${EPSILON}`)).default;
+const Mesh = (await import(`../src/mesh.js?epsilon=${EPSILON}`)).default;
 
 describe('Mesh', function() {
 	let mesh;

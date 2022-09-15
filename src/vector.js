@@ -1,17 +1,28 @@
-const VectorType = Symbol();
+let url = new URL(import.meta.url);
+if (!url.searchParams.has('epsilon')) throw new Error(`Cannot import this module without giving an epsilon ${url.searchParams.toString()}`);
+const EPSILON = Number(url.searchParams.get('epsilon'));
 
-export default EPSILON => class Vector {
+/**
+ * Represents a three-dimensional vector with `x`, `y`, and `z` coordinates.
+ */
+class Vector {
+	/**
+	 * The zero vector, i.e. the vector with x = y = z = 0.
+	 * @static
+	 * @type {Vector}
+	 */	
 	static ZERO = new Vector(0,0,0);
-
-	static [VectorType];
-	static [Symbol.hasInstance](instance) {
-		return VectorType in Object.getPrototypeOf(instance).constructor;
-	}
 
 	x;
 	y;
 	z;
 
+	/**
+	 * Creates a new vector.
+	 * @param  {Number} x The x-coordinate of the vector.
+	 * @param  {Number} y The y-coordinate of the vector.
+	 * @param  {Number} z The z-coordinate of the vector.
+	 */
 	constructor(x,y,z) {
 		// If x is an object, read the coordinates from that object
 		if (typeof x === 'object') {
@@ -73,3 +84,4 @@ export default EPSILON => class Vector {
 		return Math.acos(Vector.dot(v1, v2) / (v1.length * v2.length));
 	}
 }
+export default Vector;

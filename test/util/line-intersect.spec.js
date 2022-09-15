@@ -1,10 +1,6 @@
-import VectorFactory from '../../src/vector.js';
-import _lineIntersect from '../../src/util/line-intersect.js';
-
 const EPSILON = 1.0e-8;
-const Vector = VectorFactory(EPSILON);
-
-const lineIntersect = (a1, b1, a2, b2) => _lineIntersect(a1, b1, a2, b2, EPSILON);
+const Vector = (await import(`../../src/vector.js?epsilon=${EPSILON}`)).default;
+const lineIntersect = (await import(`../../src/util/line-intersect.js?epsilon=${EPSILON}`)).default;
 
 describe('lineIntersect', function() {
 	let a1,b1;

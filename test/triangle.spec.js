@@ -1,13 +1,8 @@
-import TriangleFactory from '../src/triangle.js';
-import SegmentFactory from '../src/segment.js';
-import VectorFactory from '../src/vector.js';
-import PolygonFactory from '../src/polygon.js';
-
 const EPSILON = 1.0e-8;
-const Vector = VectorFactory(EPSILON);
-const Segment = SegmentFactory(EPSILON);
-const Polygon = PolygonFactory(EPSILON);
-const Triangle = TriangleFactory(EPSILON);
+const Vector = (await import(`../src/vector.js?epsilon=${EPSILON}`)).default;
+const Segment = (await import(`../src/segment.js?epsilon=${EPSILON}`)).default;
+const Polygon = (await import(`../src/polygon.js?epsilon=${EPSILON}`)).default;
+const Triangle = (await import(`../src/triangle.js?epsilon=${EPSILON}`)).default;
 
 describe('Triangle', function() {
 	it('should be a Triangle, and a Polygon', function() {

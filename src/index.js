@@ -1,18 +1,11 @@
-import VectorFactory from './vector.js';
-import SegmentFactory from './segment.js';
-import TriangleFactory from './triangle.js';
-import PolygonFactory from './polygon.js';
-import MatrixFactory from './matrix.js';
-import MeshFactory from './mesh.js';
-
 const EPSILON = Number(new URL(import.meta.url).searchParams.get('epsilon') ?? 1.0e-8);
 
-const Vector = VectorFactory(EPSILON);
-const Segment = SegmentFactory(EPSILON);
-const Triangle = TriangleFactory(EPSILON);
-const Polygon = PolygonFactory(EPSILON);
-const Matrix = MatrixFactory(EPSILON);
-const Mesh = MeshFactory(EPSILON);
+const Vector = (await import(`./vector.js?epsilon=${EPSILON}`)).default;
+const Segment = (await import(`./segment.js?epsilon=${EPSILON}`)).default;
+const Triangle = (await import(`./triangle.js?epsilon=${EPSILON}`)).default;
+const Polygon = (await import(`./polygon.js?epsilon=${EPSILON}`)).default;
+const Matrix = (await import(`./matrix.js?epsilon=${EPSILON}`)).default;
+const Mesh = (await import(`./mesh.js?epsilon=${EPSILON}`)).default;
 
 export {
 	EPSILON,

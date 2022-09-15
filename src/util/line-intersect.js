@@ -1,10 +1,11 @@
-import VectorFactory from '../vector.js';
-import MatrixFactory from '../matrix.js';
+let url = new URL(import.meta.url);
+if (!url.searchParams.has('epsilon')) throw new Error(`Cannot import this module without giving an epsilon`);
+const EPSILON = Number(url.searchParams.get('epsilon'));
 
-export default function lineIntersect(a1, b1, a2, b2, EPSILON = 1.0e-8) {
-	const Vector = VectorFactory(EPSILON);
-	const Matrix = MatrixFactory(EPSILON);
-	
+const Vector = (await import(`../vector.js?epsilon=${EPSILON}`)).default;
+const Matrix = (await import(`../matrix.js?epsilon=${EPSILON}`)).default;
+
+function lineIntersect(a1, b1, a2, b2) {
 	/*
 		This function implements the algorithm by Ron Goldman, Univerity of Waterloo, 
 		as found in Andrew Glassner, "Graphics Gems", p. 304
@@ -42,3 +43,4 @@ export default function lineIntersect(a1, b1, a2, b2, EPSILON = 1.0e-8) {
 		return null;
 }
 
+export default lineIntersect;

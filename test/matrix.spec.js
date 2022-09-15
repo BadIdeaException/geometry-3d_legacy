@@ -1,6 +1,4 @@
-import MatrixFactory from '../src/matrix.js';
-
-const Matrix = MatrixFactory();
+import Matrix from '../src/matrix.js';
 
 describe('Matrix', function() {
 	it('.determinant', function() {

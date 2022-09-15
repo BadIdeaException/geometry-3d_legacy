@@ -1,10 +1,8 @@
-import VectorFactory from '../src/vector.js';
-import PolygonFactory from '../src/polygon.js';
 import { readFileSync } from 'fs';
 
 const EPSILON = 1.0e-8;
-const Vector = VectorFactory(EPSILON);
-const Polygon = PolygonFactory(EPSILON);
+const Vector = (await import(`../src/vector.js?epsilon=${EPSILON}`)).default;
+const Polygon = (await import(`../src/polygon.js?epsilon=${EPSILON}`)).default;
 
 function reorder(actual, expected) {
 	let index = actual.findIndex(vertex => expected[0].equals(vertex));
@@ -313,40 +311,5 @@ describe('Polygon', function() {
 			expect(result).to.be.an('array').with.lengthOf(2);
 			expectMultiPolyEqual(result, expected);
 		});			
-	});
-
-	describe('.tesselate', function() {
-		const z = ({ x, y }) => 3*x - 5*y + 2;
-		// eslint-disable-next-line mocha/no-setup-in-describe
-		[
-			{ vertices: [
-				{ x: 1, y: 1 },
-				{ x: 3, y: 1 },
-				{ x: 2, y: 5 },
-				{ x: -3, y: 5 },
-				{ x: -2, y: 2 },
-			], shape: 'convex' },
-			{ vertices: [
-				{ x: 1, y: 1 },
-				{ x: 3, y: 1 },
-				{ x: 2, y: 5 },
-				{ x: -3, y: 5 },
-				{ x: -2, y: 2 },
-				{ x: 1, y: 4 }
-			], shape: 'concave' },			
-		].forEach(({ vertices, shape }) => it(`should break up a ${shape} polygon into triangles`, function() {
-			vertices = vertices.map(vertex => ({ ...vertex, z: z(vertex) }));
-			const polygon = new Polygon(vertices);
-			let result = polygon.tesselate();
-
-			expect(result).to.be.an('array').with.lengthOf(vertices.length - 2);
-			expect(result.flat()).to.include.all.members(polygon);
-			// All polygon edges should be reproduced in the result.
-			// I.e., for every edge in the polygon, there should be a triangle in the result with that edge
-			for (let i = 0; i < vertices.length; i++) {
-				let triangle = result.find(triangle => triangle.includes(vertices[i]) && triangle.includes(vertices[(i + 1) % vertices.length]));
-				expect(triangle).to.exist;
-			}
-		}));
 	});
 });

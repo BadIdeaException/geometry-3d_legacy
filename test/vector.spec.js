@@ -1,14 +1,7 @@
-import VectorFactory from '../src/vector.js';
-
 const EPSILON = 1.0e-8;
-const Vector = VectorFactory(EPSILON);
+const Vector = (await import(`../src/vector.js?epsilon=${EPSILON}`)).default;
 
 describe('Vector', function() {
-	it('should recognize other vectors as instances', function() {
-		const Vector2 = VectorFactory(EPSILON);
-		expect(new Vector2(1, 2, 3)).to.be.an.instanceof(Vector);
-	});
-
 	describe('.equals', function() {
 		it('returns true for vectors within a box of 2 * EPSILON edge length, false otherwise', function() {
 			const v = new Vector(1,1,1);
