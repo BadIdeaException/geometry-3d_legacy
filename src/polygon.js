@@ -16,7 +16,7 @@ function oper(poly1, poly2, mode) {
 	// Make sure poly1 and poly2 are co-planar
 	const normal = poly1.normal;
 
-	const axis = [...'xyz'].reduce((prev, curr) => normal[curr] >= normal[prev] ? curr : prev);
+	const axis = [...'xyz'].reduce((prev, curr) => Math.abs(normal[curr]) >= Math.abs(normal[prev]) ? curr : prev);
 	const [ dim1, dim2 ] = [...'xyz'].filter(dim => dim !== axis);
 	const d = -Vector.dot(normal, poly1[0]);
 
