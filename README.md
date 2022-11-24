@@ -1,3 +1,5 @@
+** This library is in an unfinished state but is no longer maintained. **
+
 # geometry-3d
 
 This is a JavaScript library for working with triangular meshes in three dimensions. 
