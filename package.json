@@ -6,7 +6,7 @@
 	"main": "./src/index.js",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/BadIdeaException/geometry-3d"
+		"url": "https://github.com/BadIdeaException/geometry-3d_legacy"
 	},
 	"scripts": {
 		"test": "node_modules/mocha/bin/mocha.js --colors --require test/mocha.conf.js --recursive --extension .spec.js",
