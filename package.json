@@ -22,10 +22,15 @@
 		"eslint-plugin-mocha": "^10.1.0",
 		"grunt": "^1.5.3",
 		"grunt-eslint": "^24.0.0",
+		"grunt-jsdoc": "^2.4.1",
+		"grunt-jsdoc-to-markdown": "^6.0.0",
+		"jsdoc-export-default-interop": "^0.3.1",
 		"mocha": "^10.0.0"
 	},
 	"dependencies": {
 		"earcut": "^2.2.4",
-		"polygon-clipping": "^0.15.3"
+		"polybooljs": "^1.2.0",
+		"polygon-clipping": "^0.15.3",
+		"polyk": "^0.24.0"
 	}
 }

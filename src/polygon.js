@@ -1,4 +1,4 @@
-import pc from 'polygon-clipping';
+import pc from 'polybooljs';
 import winding from './util/winding.js';
 
 let url = new URL(import.meta.url);
@@ -6,6 +6,7 @@ if (!url.searchParams.has('epsilon')) throw new Error(`Cannot import this module
 const EPSILON = Number(url.searchParams.get('epsilon'));
 
 const Vector = (await import(`./vector.js?epsilon=${EPSILON}`)).default;
+const Segment = (await import(`./segment.js?epsilon=${EPSILON}`)).default;
 
 // Helper function that works like Math.sign, but returns 0 if |x| < EPSILON rather than x === 0
 const sign = x => Math.abs(x) < EPSILON ? 0 : Math.sign(x);
@@ -26,15 +27,26 @@ function oper(poly1, poly2, mode) {
 		throw new Error(`Cannot perform ${mode} on polygons that are not co-planar`);
 	}
 
-	let result = pc[mode]([poly1.map(vertex => [ vertex[dim1], vertex[dim2] ])], [poly2.map(vertex => [ vertex[dim1], vertex[dim2] ])]);
+let p1 = [poly1.map(vertex => [ vertex[dim1], vertex[dim2] ])];
+let p2 = [poly2.map(vertex => [ vertex[dim1], vertex[dim2] ])];
+	let result = pc[mode]({
+		regions: p1, 
+		inverted: false
+	}, {
+		regions: p2,
+		inverted: false 
+	});	
 	// Transform coordinates back from array form to { x, y } form and remove duplicate last vertex
+	result = pc.polygonToGeoJSON(result);
+	result = result.type === 'Polygon' ? [result.coordinates] : result.coordinates;
 	result = result.map(poly => poly.map(ring => {
 		ring = ring.map(([ x, y ]) => ({ x, y }))
 		// If the first and the last vertex are equal, remove the last vertex
 		if (eq(ring.at(0), ring.at(-1)))
 			ring.pop();
+
 		return ring;
-	}));
+	})).flat();
 
 	// result is now an array of polygons, 
 	// with each polygon being an array of linear rings, 
@@ -42,16 +54,16 @@ function oper(poly1, poly2, mode) {
 
 	// For any polygon that has a hole, lift the hole to be its own polygon. This allows for easier
 	// processing in the next step, when polygons with holes are broken up into parts.
-	for (let i = result.length - 1; i >= 0; i--) {
-		const poly = result[i];
-		if (poly.length > 2)
-			throw new Error(`Expected a polygon with at most one hole, but got ${poly.length - 1} holes`);
-		else if (poly.length === 2) {
-			result.push(poly.pop());
-		}
-		// Flatten the polygon from an array of linear rings to an array of vertices
-		result[i] = poly[0];
-	}
+	// for (let i = result.length - 1; i >= 0; i--) {
+	// 	const poly = result[i];
+	// 	if (poly.length > 2)
+	// 		throw new Error(`Expected a polygon with at most one hole, but got ${poly.length - 1} holes`);
+	// 	else if (poly.length === 2) {
+	// 		result.push(poly.pop());
+	// 	}
+	// 	// Flatten the polygon from an array of linear rings to an array of vertices
+	// 	result[i] = poly[0];
+	// }
 	
 
 	if (result.length > 2 && result.filter(poly => winding(poly, EPSILON) === +1).length > 1)
@@ -198,6 +210,38 @@ function oper(poly1, poly2, mode) {
 		result = [ top, bottom ];
 	}
 
+	// Make sure that result polygons have no vertex-on-edge or vertex-on-vertex degeneracies.
+	// For the most part, polybooljs already does a good job at this, but sometimes not.
+	// See https://github.com/velipso/polybooljs/issues/40
+	// for (let index = 0; index < result.length; index++) {
+	// 	let poly = result[index];
+	// 	for (let i = 0; i < poly.length; i++) {
+	// 		for (let j = 0; j < poly.length; j++) {
+	// 			if (j === i || j === (i + 1) % poly.length) continue;
+	// 			let A = poly[i];
+	// 			let B = poly[(i + 1) % poly.length];
+	// 			let P = poly[j];
+	// 			let alpha;
+	// 			if (Math.abs(B.x - A.x) > Math.abs(B.y - A.y)) {
+	// 				alpha = (P.x - A.x) / (B.x - A.x);
+	// 				if (Math.abs(P.y - (A.y + alpha * (B.y - A.y))) > EPSILON)
+	// 					alpha = undefined;
+	// 			} else {
+	// 				alpha = (P.y - A.y) / (B.y - A.y);
+	// 				if (Math.abs(P.x - (A.x + alpha * (B.x - A.x))) > EPSILON)
+	// 					alpha = undefined;
+	// 			}
+	// 			if (alpha > 0 && alpha < 1) {
+	// 				let include = alpha > 0 ? 1 : 0; // If the vertices coincide, don't duplicate them
+	// 				let poly1 = poly.slice(j, poly.length).concat(poly.slice(0, (j + include) % poly.length));
+	// 				let poly2 = poly.slice((i + 1) % poly.length, (j + include) % poly.length);
+	// 				result.splice(index, 1, poly1, poly2);
+	// 				poly = poly1;
+	// 			}
+	// 		}
+	// 	}		
+	// }
+
 	result = result.map(poly => 
 		poly.map(({ x, y }) => new Vector({
 			[dim1]: x,
@@ -211,8 +255,12 @@ function oper(poly1, poly2, mode) {
 
 class Polygon extends Array {
 	constructor() {
-		let vertices = (arguments.length === 1 && Array.isArray(arguments[0])) ? arguments[0] : arguments;
+		let vertices = (arguments.length === 1 && Array.isArray(arguments[0])) ? arguments[0] : Array.from(arguments);
 		super(vertices.length);
+		// Ensure counter-clockwise winding
+		if (winding(vertices, EPSILON) === +1) 
+			vertices = vertices.slice().reverse(); // shallow copy because reverse operates in-place
+
 		Object.assign(this, vertices);
 	}
 
@@ -317,7 +365,7 @@ class Polygon extends Array {
 	 * @return {Polygon[]}       An array of result polygons.
 	 */
 	intersect(other) {
-		return oper(this, other, 'intersection').map(poly => new Polygon(poly));
+		return oper(this, other, 'intersect').map(poly => new Polygon(poly));
 	}
 
 	/**
@@ -342,8 +390,52 @@ class Polygon extends Array {
 		return oper(this, other, 'union').map(poly => new Polygon(poly));
 	}
 
+	contains(point) {
+		// Basically implements the winding number check by Dan Summer, 2001.
+		// (https://web.archive.org/web/20210504233957/http://geomalgorithms.com/a03-_inclusion.html)
+
+		// Helper function that tests if p2 is left/on/right of the line through p0 and p1. 
+		// If p2 is right of that line, result is < 0.
+		// If p2 is on that line, result is === 0.
+		// If p2 is left of that line, result is > 0.
+		const isLeft = (P, Q, R) => (Q.x - P.x) * (R.y - P.y) - (Q.y - P.y) * (R.x - P.x);
+		
+		// Reduce to 2D
+		const axis = [...'xyz'].reduce((prev, curr) => Math.abs(this.normal[curr]) >= Math.abs(this.normal[prev]) ? curr : prev);
+		const [ dim1, dim2 ] = [...'xyz'].filter(dim => dim !== axis);
+		const poly = this.map(v => ({ [dim1]: v[dim1], [dim2]: v[dim2] }));
+
+		// Iterate through all edges and check them against a horizontal ray	
+		let wn = poly.reduce((wn, vertex, index) => {
+			let a = vertex;
+			let b = this[(index + 1) % this.length];
+
+			if (a.y <= point.y) { // edge starts below  the point
+				if (b.y > point.y // edge ends above the point => it is an upward crossing
+					&& isLeft(a, b, point) >= 0) // point is left of the edge, or on it
+						return wn + 1; // Ray intersects an upward edge
+			} else // edge starts above the point
+				if (b.y <= point.y // edge ends below the point => it is a downward crossing
+					&& isLeft(a, b, point) <= 0) // point is right of the edge, or on it
+						return wn - 1; // Ray intersects a downward edge
+			return wn;
+		}, 0);
+
+		// Here we differ from Summer, who considers any point with a non-zero winding number to be "inside".
+		// We will however comply with the even-odd rule, meaning a point is inside if it has an odd winding number.
+		return (wn % 2) === 1;
+	}
+
 	isEmpty() { 
 		return this.length === 0;
+	}
+
+	get edges() {
+		const result = [];
+		for (let i = 0; i < this.length - 1; i++)
+			result.push(new Segment(this[i], this[i+1]));
+		result.push(new Segment(this[this.length - 1], this[0]));
+		return result;
 	}
 }
 

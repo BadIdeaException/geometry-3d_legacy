@@ -1,3 +1,4 @@
+import kahan from './util/kahan.js';
 let url = new URL(import.meta.url);
 if (!url.searchParams.has('epsilon')) throw new Error(`Cannot import this module without giving an epsilon ${url.searchParams.toString()}`);
 const EPSILON = Number(url.searchParams.get('epsilon'));

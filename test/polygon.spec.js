@@ -3,6 +3,7 @@ import { readFileSync } from 'fs';
 const EPSILON = 1.0e-8;
 const Vector = (await import(`../src/vector.js?epsilon=${EPSILON}`)).default;
 const Polygon = (await import(`../src/polygon.js?epsilon=${EPSILON}`)).default;
+const Triangle = (await import(`../src/triangle.js?epsilon=${EPSILON}`)).default;
 
 function reorder(actual, expected) {
 	let index = actual.findIndex(vertex => expected[0].equals(vertex));
@@ -97,6 +98,16 @@ describe('Polygon', function() {
 			vertices.push(new Vector(3, 3, 1));
 			expect(new Polygon(vertices).normal).to.exist;
 		});
+
+		it('should be pointing "outward"', function() {
+			const vertices = [
+				{ x: 1, y: 1, z: 3 },
+				{ x: 3, y: 1, z: 5 },
+				{ x: 1, y: 3, z: 5 }
+			].map(vertex => new Vector({ ...vertex, z: -1 }));
+			const polygon = new Polygon(vertices);debugger
+			[...'xyz'].forEach(dim => expect(polygon.normal[dim]).to.be.at.least(0));
+		});
 	});
 
 	describe('.isPlanar', function() {
@@ -165,6 +176,95 @@ describe('Polygon', function() {
 			expect(polygon.isConvex()).to.be.false;
 		});
 	});
+
+	// describe.skip('.cut', function() {
+	// 	let polygon;
+	// 	const z = ({ x, y }) => -(5*x - 3*y + 8) / 2;
+	// 	// eslint-disable-next-line mocha/no-setup-in-describe
+	// 	const vertices = [
+	// 		{ x: 1, y: 1 },
+	// 		{ x: 5, y: 5 },
+	// 		{ x: 4, y: 8 },
+	// 		{ x: 0, y: 5 },
+	// 		{ x: 2, y: 4 }
+	// 	].map(vertex => new Vector({ ...vertex, z: z(vertex) }));
+
+	// 	beforeEach(function() {
+	// 		polygon = new Polygon(vertices);
+	// 	});
+
+	// 	it('should not cut the polygon if it does not intersect the cut plane', function() {
+	// 		const distance = 20;
+	// 		[
+	// 			new Vector(1, 0, 0),
+	// 			new Vector(0, 1, 0),
+	// 			new Vector(0, 0, 1),
+	// 			new Vector(1, 1, 1)
+	// 		].forEach(normal => {
+	// 			expect(polygon.cut(normal, -distance)).to.be.an('object').with.property('above').that.deep.equals(polygon);
+	// 			expect(polygon.cut(normal, +distance)).to.be.an('object').with.property('below').that.deep.equals(polygon);
+	// 		});
+	// 	});
+
+	// 	it('should have the polygon in both above and below if it is co-planar with the cut plane', function() {			
+	// 		const normal = polygon.normal;
+	// 		const offset = Vector.dot(polygon.normal, polygon[0]);
+			
+	// 		let cut = polygon.cut(normal, offset);
+	// 		expect(cut).to.be.an('object').with.all.keys('above', 'below');
+	// 		expect(cut.above).to.deep.equal(polygon);
+	// 		expect(cut.below).to.deep.equal(polygon);
+	// 	});
+
+	// 	it.only('should', function() {			
+	// 		const normal = new Vector(1,0,0);
+	// 		const distance = 2;
+	// 		polygon = new Polygon(polygon.map(vertex => ({ ...vertex, z: 0 })));
+	// 		let cut = polygon.cut(normal, distance)
+	// 	});
+	// 	it('should cut the polygon into above and below parts if it intersects the cut plane', function() {			
+	// 		const normal = new Vector(1, 1, 1);
+	// 		const distance = 2;
+	// 		let cut = polygon.cut(normal, distance);
+
+	// 		expect(cut).to.be.an('object').with.keys('above', 'below');
+	// 		expect(cut.below).to.not.be.empty;
+	// 		expect(cut.above).to.not.be.empty;
+
+	// 		// All of tri's vertices should be present
+	// 		expect(cut.above.concat(cut.below)).to.include.members(polygon);
+	// 		let intersections = cut.above.filter(v => !polygon.includes(v));
+	// 		expect(intersections).to.have.lengthOf(2);
+	// 		expect(cut.above.length + cut.below.length).to.equal(polygon.length + 2 * intersections.length);
+	// 		intersections.forEach(isect => {
+	// 			// Each of them should also be in below
+	// 			expect(cut.below).to.contain(isect);
+	// 			// Each of them should be on the cut plane
+	// 			expect(Vector.dot(normal, isect)).to.be.approximately(distance, EPSILON);
+	// 		});
+
+	// 		cut.above.forEach(vertex => expect(Vector.dot(normal, vertex)).to.be.at.least(distance - EPSILON));
+	// 		cut.below.forEach(vertex => expect(Vector.dot(normal, vertex)).to.be.at.most(distance + EPSILON));
+	// 	});
+
+	// 	it('should not cut the polygon at vertices merely touching the cut plane', function() {
+	// 		const normal = Vector.cross(polygon[3].subtract(polygon[0]), polygon.normal);
+	// 		const distance = Vector.dot(normal, polygon[0]);
+
+	// 		let cut = polygon.cut(normal, distance);			
+	// 		expect(cut.below).to.be.empty;
+	// 		expect(cut.above).to.deep.equal(polygon);
+	// 	});
+
+	// 	it('should ignore edges running along the cut plane', function() {
+	// 		const normal = Vector.cross(polygon[4].subtract(polygon[0]), polygon.normal);
+	// 		const distance = Vector.dot(normal, polygon[0]);
+
+	// 		let cut = polygon.cut(normal, distance);			
+	// 		expect(cut.above.concat(cut.below)).to.not.include(polygon[4]);
+	// 		expect.fail()
+	// 	});
+	// });
 
 	describe('.intersect', function() {
 		it('should throw when attempting to intersect polygons that are not co-planar', function() {
@@ -235,7 +335,7 @@ describe('Polygon', function() {
 					.map(vertex => new Vector({ ...vertex, z: 0 })));
 				const expected = JSON.parse(readFileSync('test/fixtures/polygon/subtract-with-hole-general/expected.json'))
 					.map(poly => poly.map(vertex => new Vector({ ...vertex, z: 0 })));
-
+debugger
 				let result = polygon.subtract(clip);
 				expect(result).to.be.an('array').with.lengthOf(2);
 				expectMultiPolyEqual(result, expected);
@@ -280,6 +380,22 @@ describe('Polygon', function() {
 				expectMultiPolyEqual(result, expected);
 			});		
 		});
+
+		it('should break up the result where a vertex touches an edge', function() {
+			// This test is based on real-world data (which is why the data in subject and clip is so screwy). 
+			// Generally, Polybooljs does a pretty good job of breaking up result polygons that have a vertex
+			// touching one of the other edges. On this data, however, it fails. 
+			// (See https://github.com/velipso/polybooljs/issues/40)
+			// 
+			// This test ensures that the manual error correction in polygon.js catches and repairs such failures.
+			const polygon = new Polygon(JSON.parse(readFileSync('test/fixtures/polygon/subtract-vertex-on-edge/subject.json')))
+				.map(vertex => new Vector(vertex));
+			const clip = new Polygon(JSON.parse(readFileSync('test/fixtures/polygon/subtract-vertex-on-edge/clip.json')))
+				.map(vertex => new Vector(vertex));
+			
+			let result = polygon.subtract(clip);
+			expect(result).to.have.lengthOf(2);
+		});
 	});
 
 	describe('.add', function() {
@@ -312,4 +428,32 @@ describe('Polygon', function() {
 			expectMultiPolyEqual(result, expected);
 		});			
 	});
+
+	describe('.contains', function() {
+		const vertices = [
+			new Vector(1, 1, 1),
+			new Vector(5, 5, 1),
+			new Vector(4, 8, 1),
+			new Vector(0, 5, 1),
+			new Vector(1, 3, 1)
+		];
+
+		it('should return true for a point inside the polygon', function() {
+			expect(new Polygon(vertices).contains(new Vector(4, 5, 1))).to.be.true;
+		});
+		it('should return false for a point outside the polygon', function() {
+			expect(new Polygon(vertices).contains(new Vector(12, 2, 1))).to.be.false;			
+		});
+		it('should return true for a point on one of the polygon\'s edges', function() {
+			let p = vertices[0].add(vertices[1].subtract(vertices[0]).scale(0.5));
+			expect(new Polygon(vertices).contains(p)).to.be.true;
+		});
+	});
+
+	it.only('', function(){
+		const T = new Triangle(JSON.parse(readFileSync('T.json')).map(v=>new Vector(v)));
+		const above = new Polygon(JSON.parse(readFileSync('above.json')).map(v=>new Vector(v)));
+		debugger
+		const result = T.subtract(above);
+	})
 });
