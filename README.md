@@ -1,4 +1,4 @@
-** This library is in an unfinished state but is no longer maintained. **
+**This library is in an unfinished state but is no longer maintained.**
 
 # geometry-3d
 
